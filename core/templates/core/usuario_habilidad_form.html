@@ -1,0 +1,106 @@
+{% extends 'core/base.html' %}
+
+{% block title %}
+    {% if form.instance.id %}
+        Editar Habilidad | {{ usuario.nombres }} {{ usuario.apellidos }}
+    {% else %}
+        Agregar Habilidad | {{ usuario.nombres }} {{ usuario.apellidos }}
+    {% endif %} | REDUDES
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+            <h2 class="mb-0">
+                {% if form.instance.id %}
+                    Editar Habilidad
+                {% else %}
+                    Agregar Habilidad
+                {% endif %}
+            </h2>
+            <div>
+                <span class="badge bg-light text-dark">{{ usuario.nombres }} {{ usuario.apellidos }}</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="post" id="habilidadForm" class="show-loading" data-validate="id_habilidad,id_experiencia">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="id_habilidad" class="form-label">Habilidad <span class="text-danger">*</span></label>
+                    <input type="text" name="habilidad" id="id_habilidad" class="form-control {% if form.habilidad.errors %}is-invalid{% endif %}" value="{{ form.habilidad.value|default:'' }}" required placeholder="Ej: Programación en Python">
+                    {% if form.habilidad.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.habilidad.errors }}
+                        </div>
+                    {% endif %}
+                    <div id="id_habilidad-error" class="invalid-feedback" style="display: none;">
+                        Este campo es obligatorio.
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="id_experiencia" class="form-label">Experiencia <span class="text-danger">*</span></label>
+                    <select class="form-select {% if form.experiencia.errors %}is-invalid{% endif %}" id="id_experiencia" name="experiencia" required>
+                        <option value="" {% if not form.experiencia.value %}selected{% endif %}>Seleccione nivel de experiencia</option>
+                        <option value="Menos de 1 año" {% if form.experiencia.value == "Menos de 1 año" %}selected{% endif %}>Menos de 1 año</option>
+                        <option value="1-2 años" {% if form.experiencia.value == "1-2 años" %}selected{% endif %}>1-2 años</option>
+                        <option value="3-5 años" {% if form.experiencia.value == "3-5 años" %}selected{% endif %}>3-5 años</option>
+                        <option value="5-10 años" {% if form.experiencia.value == "5-10 años" %}selected{% endif %}>5-10 años</option>
+                        <option value="Más de 10 años" {% if form.experiencia.value == "Más de 10 años" %}selected{% endif %}>Más de 10 años</option>
+                    </select>
+                    {% if form.experiencia.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.experiencia.errors }}
+                        </div>
+                    {% endif %}
+                    <div id="id_experiencia-error" class="invalid-feedback" style="display: none;">
+                        Este campo es obligatorio.
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-end mt-4">
+                    <a href="{% url 'usuario_detail' pk=usuario.id %}" class="btn btn-secondary me-2">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('habilidadForm');
+        
+        form.addEventListener('submit', function(e) {
+            const habilidadInput = document.getElementById('id_habilidad');
+            const experienciaSelect = document.getElementById('id_experiencia');
+            
+            if (!habilidadInput.value.trim()) {
+                e.preventDefault();
+                alert('Por favor, ingrese una habilidad.');
+                habilidadInput.focus();
+                return false;
+            }
+            
+            if (!experienciaSelect.value) {
+                e.preventDefault();
+                alert('Por favor, seleccione un nivel de experiencia.');
+                experienciaSelect.focus();
+                return false;
+            }
+            
+            // Mostrar modal de carga
+            showLoadingModal();
+            return true;
+        });
+    });
+</script>
+{% endblock %} 

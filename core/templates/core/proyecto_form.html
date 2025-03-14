@@ -1,0 +1,92 @@
+{% extends 'core/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+    {% if form.instance.id %}
+        Editar Proyecto | REDUDES
+    {% else %}
+        Nuevo Proyecto | REDUDES
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-10 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        {% if form.instance.id %}
+                            Editar Proyecto
+                        {% else %}
+                            Nuevo Proyecto
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.nombre|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.convocatoria|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.tipo_proyecto|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.tipo_convocatoria|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.presupuesto|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.fecha|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                {{ form.alcance|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                {{ form.objetivo|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'proyecto_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Volver
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Inicializar datepicker para el campo de fecha si es necesario
+    document.addEventListener('DOMContentLoaded', function() {
+        // Aquí puedes agregar código JavaScript adicional si es necesario
+    });
+</script>
+{% endblock %} 

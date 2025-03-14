@@ -1,0 +1,9 @@
+{
+    "habilidades_added": 0,
+    "conocimientos_added": 0,
+    "estudios_added": 0,
+    "experiencia_added": 0,
+    "errors": [
+        "No se pudo extraer información de CVLAC. Verifique que la URL sea correcta y que el perfil sea público."
+    ]
+}

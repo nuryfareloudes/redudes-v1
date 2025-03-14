@@ -1,0 +1,105 @@
+{% extends 'core/base.html' %}
+
+{% block title %}
+    {% if form.instance.id %}
+        Editar Conocimiento | {{ usuario.nombres }} {{ usuario.apellidos }}
+    {% else %}
+        Agregar Conocimiento | {{ usuario.nombres }} {{ usuario.apellidos }}
+    {% endif %} | REDUDES
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+            <h2 class="mb-0">
+                {% if form.instance.id %}
+                    Editar Conocimiento
+                {% else %}
+                    Agregar Conocimiento
+                {% endif %}
+            </h2>
+            <div>
+                <span class="badge bg-light text-dark">{{ usuario.nombres }} {{ usuario.apellidos }}</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="post" id="conocimientoForm" class="show-loading" data-validate="id_conocimiento,id_nivel">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="id_conocimiento" class="form-label">Conocimiento <span class="text-danger">*</span></label>
+                    <input type="text" name="conocimiento" id="id_conocimiento" class="form-control {% if form.conocimiento.errors %}is-invalid{% endif %}" value="{{ form.conocimiento.value|default:'' }}" required placeholder="Ej: Inteligencia Artificial">
+                    {% if form.conocimiento.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.conocimiento.errors }}
+                        </div>
+                    {% endif %}
+                    <div id="id_conocimiento-error" class="invalid-feedback" style="display: none;">
+                        Este campo es obligatorio.
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="id_nivel" class="form-label">Nivel <span class="text-danger">*</span></label>
+                    <select class="form-select {% if form.nivel.errors %}is-invalid{% endif %}" id="id_nivel" name="nivel" required>
+                        <option value="" {% if not form.nivel.value %}selected{% endif %}>Seleccione nivel de conocimiento</option>
+                        <option value="1" {% if form.nivel.value == 1 %}selected{% endif %}>Básico</option>
+                        <option value="2" {% if form.nivel.value == 2 %}selected{% endif %}>Intermedio</option>
+                        <option value="3" {% if form.nivel.value == 3 %}selected{% endif %}>Avanzado</option>
+                        <option value="4" {% if form.nivel.value == 4 %}selected{% endif %}>Experto</option>
+                    </select>
+                    {% if form.nivel.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.nivel.errors }}
+                        </div>
+                    {% endif %}
+                    <div id="id_nivel-error" class="invalid-feedback" style="display: none;">
+                        Este campo es obligatorio.
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-end mt-4">
+                    <a href="{% url 'usuario_detail' pk=usuario.id %}" class="btn btn-secondary me-2">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('conocimientoForm');
+        
+        form.addEventListener('submit', function(e) {
+            const conocimientoInput = document.getElementById('id_conocimiento');
+            const nivelSelect = document.getElementById('id_nivel');
+            
+            if (!conocimientoInput.value.trim()) {
+                e.preventDefault();
+                alert('Por favor, ingrese un conocimiento.');
+                conocimientoInput.focus();
+                return false;
+            }
+            
+            if (!nivelSelect.value) {
+                e.preventDefault();
+                alert('Por favor, seleccione un nivel de conocimiento.');
+                nivelSelect.focus();
+                return false;
+            }
+            
+            // Mostrar modal de carga
+            showLoadingModal();
+            return true;
+        });
+    });
+</script>
+{% endblock %} 

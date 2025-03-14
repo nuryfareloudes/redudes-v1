@@ -1,0 +1,128 @@
+{% extends 'core/base.html' %}
+
+{% block title %}
+    {% if form.instance.id %}
+        Editar Experiencia | {{ usuario.nombres }} {{ usuario.apellidos }}
+    {% else %}
+        Agregar Experiencia | {{ usuario.nombres }} {{ usuario.apellidos }}
+    {% endif %} | REDUDES
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+            <h2 class="mb-0">
+                {% if form.instance.id %}
+                    Editar Experiencia
+                {% else %}
+                    Agregar Experiencia
+                {% endif %}
+            </h2>
+            <div>
+                <span class="badge bg-light text-dark">{{ usuario.nombres }} {{ usuario.apellidos }}</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="post" id="experienciaForm" class="show-loading" data-validate="id_rol,id_tiempo,id_actividades">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="id_rol" class="form-label">Cargo o Rol <span class="text-danger">*</span></label>
+                    <input type="text" name="rol" id="id_rol" class="form-control {% if form.rol.errors %}is-invalid{% endif %}" value="{{ form.rol.value|default:'' }}" required placeholder="Ej: Desarrollador Senior">
+                    {% if form.rol.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.rol.errors }}
+                        </div>
+                    {% endif %}
+                    <div id="id_rol-error" class="invalid-feedback" style="display: none;">
+                        Este campo es obligatorio.
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="id_tiempo" class="form-label">Tiempo (años) <span class="text-danger">*</span></label>
+                    <input type="number" name="tiempo" id="id_tiempo" class="form-control {% if form.tiempo.errors %}is-invalid{% endif %}" value="{{ form.tiempo.value|default:'' }}" required min="1" max="50" placeholder="Ej: 3">
+                    {% if form.tiempo.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.tiempo.errors }}
+                        </div>
+                    {% endif %}
+                    <div id="id_tiempo-error" class="invalid-feedback" style="display: none;">
+                        Este campo es obligatorio.
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="id_actividades" class="form-label">Actividades y Responsabilidades <span class="text-danger">*</span></label>
+                    <textarea class="form-control {% if form.actividades.errors %}is-invalid{% endif %}" id="id_actividades" name="actividades" rows="4" required placeholder="Describa las principales actividades...">{{ form.actividades.value|default:'' }}</textarea>
+                    {% if form.actividades.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.actividades.errors }}
+                        </div>
+                    {% endif %}
+                    <div id="id_actividades-error" class="invalid-feedback" style="display: none;">
+                        Este campo es obligatorio.
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-end mt-4">
+                    <a href="{% url 'usuario_detail' pk=usuario.id %}" class="btn btn-secondary me-2">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('experienciaForm');
+        
+        form.addEventListener('submit', function(e) {
+            const rolInput = document.getElementById('id_rol');
+            const tiempoInput = document.getElementById('id_tiempo');
+            const actividadesTextarea = document.getElementById('id_actividades');
+            
+            if (!rolInput.value.trim()) {
+                e.preventDefault();
+                alert('Por favor, ingrese un cargo o rol.');
+                rolInput.focus();
+                return false;
+            }
+            
+            if (!tiempoInput.value) {
+                e.preventDefault();
+                alert('Por favor, ingrese el tiempo en años.');
+                tiempoInput.focus();
+                return false;
+            }
+            
+            const tiempo = parseInt(tiempoInput.value);
+            if (tiempo < 1 || tiempo > 50) {
+                e.preventDefault();
+                alert('El tiempo debe estar entre 1 y 50 años.');
+                tiempoInput.focus();
+                return false;
+            }
+            
+            if (!actividadesTextarea.value.trim()) {
+                e.preventDefault();
+                alert('Por favor, describa las actividades y responsabilidades.');
+                actividadesTextarea.focus();
+                return false;
+            }
+            
+            // Mostrar modal de carga
+            showLoadingModal();
+            return true;
+        });
+    });
+</script>
+{% endblock %} 

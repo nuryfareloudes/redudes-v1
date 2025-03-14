@@ -1,0 +1,137 @@
+{% extends 'core/base.html' %}
+
+{% block title %}
+    {% if form.instance.id %}
+        Editar Estudio | {{ usuario.nombres }} {{ usuario.apellidos }}
+    {% else %}
+        Agregar Estudio | {{ usuario.nombres }} {{ usuario.apellidos }}
+    {% endif %} | REDUDES
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+            <h2 class="mb-0">
+                {% if form.instance.id %}
+                    Editar Estudio
+                {% else %}
+                    Agregar Estudio
+                {% endif %}
+            </h2>
+            <div>
+                <span class="badge bg-light text-dark">{{ usuario.nombres }} {{ usuario.apellidos }}</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="post" id="estudioForm" class="show-loading" data-validate="id_estudio,id_nivel,id_year">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="id_estudio" class="form-label">Título obtenido <span class="text-danger">*</span></label>
+                    <input type="text" name="estudio" id="id_estudio" class="form-control {% if form.estudio.errors %}is-invalid{% endif %}" value="{{ form.estudio.value|default:'' }}" required placeholder="Ej: Ingeniería de Sistemas">
+                    {% if form.estudio.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.estudio.errors }}
+                        </div>
+                    {% endif %}
+                    <div id="id_estudio-error" class="invalid-feedback" style="display: none;">
+                        Este campo es obligatorio.
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="id_nivel" class="form-label">Nivel académico <span class="text-danger">*</span></label>
+                    <select class="form-select {% if form.nivel.errors %}is-invalid{% endif %}" id="id_nivel" name="nivel" required>
+                        <option value="" {% if not form.nivel.value %}selected{% endif %}>Seleccione nivel académico</option>
+                        <option value="1" {% if form.nivel.value == 1 %}selected{% endif %}>Técnico</option>
+                        <option value="2" {% if form.nivel.value == 2 %}selected{% endif %}>Tecnólogo</option>
+                        <option value="3" {% if form.nivel.value == 3 %}selected{% endif %}>Pregrado</option>
+                        <option value="4" {% if form.nivel.value == 4 %}selected{% endif %}>Especialización</option>
+                        <option value="5" {% if form.nivel.value == 5 %}selected{% endif %}>Maestría</option>
+                        <option value="6" {% if form.nivel.value == 6 %}selected{% endif %}>Doctorado</option>
+                    </select>
+                    {% if form.nivel.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.nivel.errors }}
+                        </div>
+                    {% endif %}
+                    <div id="id_nivel-error" class="invalid-feedback" style="display: none;">
+                        Este campo es obligatorio.
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="id_year" class="form-label">Año de graduación <span class="text-danger">*</span></label>
+                    <input type="number" name="year" id="id_year" class="form-control {% if form.year.errors %}is-invalid{% endif %}" value="{{ form.year.value|default:'' }}" required min="1950" max="{{ current_year }}" placeholder="Ej: 2015">
+                    {% if form.year.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.year.errors }}
+                        </div>
+                    {% endif %}
+                    <div id="id_year-error" class="invalid-feedback" style="display: none;">
+                        Este campo es obligatorio.
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-end mt-4">
+                    <a href="{% url 'usuario_detail' pk=usuario.id %}" class="btn btn-secondary me-2">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('estudioForm');
+        
+        form.addEventListener('submit', function(e) {
+            const estudioInput = document.getElementById('id_estudio');
+            const nivelSelect = document.getElementById('id_nivel');
+            const yearInput = document.getElementById('id_year');
+            
+            if (!estudioInput.value.trim()) {
+                e.preventDefault();
+                alert('Por favor, ingrese un título.');
+                estudioInput.focus();
+                return false;
+            }
+            
+            if (!nivelSelect.value) {
+                e.preventDefault();
+                alert('Por favor, seleccione un nivel académico.');
+                nivelSelect.focus();
+                return false;
+            }
+            
+            if (!yearInput.value) {
+                e.preventDefault();
+                alert('Por favor, ingrese el año de graduación.');
+                yearInput.focus();
+                return false;
+            }
+            
+            const year = parseInt(yearInput.value);
+            const currentYear = new Date().getFullYear();
+            if (year < 1950 || year > currentYear) {
+                e.preventDefault();
+                alert(`El año debe estar entre 1950 y ${currentYear}.`);
+                yearInput.focus();
+                return false;
+            }
+            
+            // Mostrar modal de carga
+            showLoadingModal();
+            return true;
+        });
+    });
+</script>
+{% endblock %} 

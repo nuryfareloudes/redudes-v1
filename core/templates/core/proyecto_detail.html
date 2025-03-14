@@ -1,0 +1,237 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ proyecto.nombre }} | REDUDES{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-10 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Detalles del Proyecto</h4>
+                    <div>
+                        <a href="{% url 'proyecto_update' proyecto.id %}" class="btn btn-warning btn-sm">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+                        <a href="{% url 'proyecto_delete' proyecto.id %}" class="btn btn-danger btn-sm">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h2 class="text-primary">{{ proyecto.nombre }}</h2>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Convocatoria:</strong> {{ proyecto.convocatoria }}</p>
+                            <p><strong>Tipo de Proyecto:</strong> {{ proyecto.tipo_proyecto }}</p>
+                            <p><strong>Tipo de Convocatoria:</strong> {{ proyecto.tipo_convocatoria }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Presupuesto:</strong> ${{ proyecto.presupuesto|floatformat:0 }}</p>
+                            <p><strong>Fecha:</strong> {{ proyecto.fecha|date:"d/m/Y" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Alcance</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p>{{ proyecto.alcance|linebreaks }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Objetivo</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p>{{ proyecto.objetivo|linebreaks }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sección para roles del proyecto -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Roles del Proyecto</h5>
+                                    <a href="#" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-plus"></i> Agregar Rol
+                                    </a>
+                                </div>
+                                <div class="card-body">
+                                    {% if proyecto_roles %}
+                                    <div class="table-responsive">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Rol</th>
+                                                    <th>Habilidades</th>
+                                                    <th>Experiencia</th>
+                                                    <th>Conocimientos</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for rol in proyecto_roles %}
+                                                <tr>
+                                                    <td>{{ rol.rol }}</td>
+                                                    <td>{{ rol.habilidades }}</td>
+                                                    <td>{{ rol.experiencia }}</td>
+                                                    <td>{{ rol.conocimientos }}</td>
+                                                    <td>
+                                                        <div class="btn-group" role="group">
+                                                            <a href="#" class="btn btn-sm btn-warning">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                            <a href="#" class="btn btn-sm btn-danger">
+                                                                <i class="fas fa-trash"></i>
+                                                            </a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <div class="alert alert-info">
+                                        No hay roles definidos para este proyecto.
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sección para aliados del proyecto -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Aliados del Proyecto</h5>
+                                    <a href="#" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-plus"></i> Agregar Aliado
+                                    </a>
+                                </div>
+                                <div class="card-body">
+                                    {% if proyecto_aliados %}
+                                    <div class="table-responsive">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Entidad</th>
+                                                    <th>Tipo de Aliado</th>
+                                                    <th>Responsabilidades</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for aliado in proyecto_aliados %}
+                                                <tr>
+                                                    <td>{{ aliado.entidad }}</td>
+                                                    <td>{{ aliado.tipo_aliado }}</td>
+                                                    <td>{{ aliado.responsabilidades|truncatewords:10 }}</td>
+                                                    <td>
+                                                        <div class="btn-group" role="group">
+                                                            <a href="#" class="btn btn-sm btn-warning">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                            <a href="#" class="btn btn-sm btn-danger">
+                                                                <i class="fas fa-trash"></i>
+                                                            </a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <div class="alert alert-info">
+                                        No hay aliados definidos para este proyecto.
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sección para productos del proyecto -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Productos del Proyecto</h5>
+                                    <a href="#" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-plus"></i> Agregar Producto
+                                    </a>
+                                </div>
+                                <div class="card-body">
+                                    {% if proyecto_productos %}
+                                    <div class="table-responsive">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Producto</th>
+                                                    <th>Tipo</th>
+                                                    <th>Cantidad</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for producto in proyecto_productos %}
+                                                <tr>
+                                                    <td>{{ producto.producto }}</td>
+                                                    <td>{{ producto.tipo }}</td>
+                                                    <td>{{ producto.cantidad }}</td>
+                                                    <td>
+                                                        <div class="btn-group" role="group">
+                                                            <a href="#" class="btn btn-sm btn-warning">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                            <a href="#" class="btn btn-sm btn-danger">
+                                                                <i class="fas fa-trash"></i>
+                                                            </a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <div class="alert alert-info">
+                                        No hay productos definidos para este proyecto.
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'proyecto_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver a la lista
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

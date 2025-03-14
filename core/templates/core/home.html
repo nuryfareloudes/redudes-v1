@@ -1,0 +1,57 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Inicio | REDUDES{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="jumbotron bg-light p-5 rounded">
+        <h1 class="display-4">Bienvenido a REDUDES</h1>
+        <p class="lead">Sistema de Información para la Gestión de Proyectos de Investigación</p>
+        <hr class="my-4">
+        <p>Utiliza este sistema para administrar proyectos, usuarios, roles, aliados y productos.</p>
+        <div class="d-flex gap-2">
+            <a class="btn btn-primary btn-lg" href="{% url 'proyecto_list' %}" role="button">
+                <i class="fas fa-project-diagram"></i> Ver Proyectos
+            </a>
+            <a class="btn btn-success btn-lg" href="{% url 'usuario_list' %}" role="button">
+                <i class="fas fa-users"></i> Ver Usuarios
+            </a>
+        </div>
+    </div>
+    
+    <div class="row mt-5">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow">
+                <div class="card-body text-center">
+                    <i class="fas fa-project-diagram fa-4x text-primary mb-3"></i>
+                    <h5 class="card-title">Proyectos</h5>
+                    <p class="card-text">Gestiona los proyectos de investigación, sus objetivos, presupuestos y fechas.</p>
+                    <a href="{% url 'proyecto_list' %}" class="btn btn-outline-primary">Ir a Proyectos</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-4x text-success mb-3"></i>
+                    <h5 class="card-title">Usuarios</h5>
+                    <p class="card-text">Administra los usuarios del sistema, sus habilidades, conocimientos y experiencia.</p>
+                    <a href="{% url 'usuario_list' %}" class="btn btn-outline-success">Ir a Usuarios</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow">
+                <div class="card-body text-center">
+                    <i class="fas fa-handshake fa-4x text-warning mb-3"></i>
+                    <h5 class="card-title">Aliados</h5>
+                    <p class="card-text">Gestiona las entidades aliadas a los proyectos y sus responsabilidades.</p>
+                    <a href="#" class="btn btn-outline-warning">Ir a Aliados</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

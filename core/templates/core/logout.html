@@ -1,0 +1,24 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Cerrar Sesión | REDUDES{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-6 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white text-center">
+                    <h3 class="mb-0">Cerrar Sesión</h3>
+                </div>
+                <div class="card-body text-center">
+                    <p class="lead">Has cerrado sesión correctamente.</p>
+                    <p>¡Gracias por usar REDUDES!</p>
+                    <a href="{% url 'login' %}" class="btn btn-primary mt-3">
+                        <i class="fas fa-sign-in-alt"></i> Volver a iniciar sesión
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

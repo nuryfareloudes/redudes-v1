@@ -1,0 +1,79 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Procesar Datos de {{ usuario.nombres }} {{ usuario.apellidos }} | REDUDES{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Procesar Datos de Usuario</h4>
+                </div>
+                <div class="card-body">
+                    <h5 class="mb-3">{{ usuario.nombres }} {{ usuario.apellidos }}</h5>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 
+                        Se extraerá información de los siguientes perfiles:
+                        <ul class="mb-0 mt-2">
+                            {% if usuario.url_cvlac %}
+                            <li><strong>CVLAC:</strong> {{ usuario.url_cvlac }}</li>
+                            {% endif %}
+                            
+                            {% if usuario.url_linkedin %}
+                            <li><strong>LinkedIn:</strong> {{ usuario.url_linkedin }}</li>
+                            {% endif %}
+                            
+                            {% if not usuario.url_cvlac and not usuario.url_linkedin %}
+                            <li>No hay perfiles configurados. Por favor, edite el usuario para agregar URLs de CVLAC o LinkedIn.</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        Este proceso puede tardar varios minutos. Por favor, sea paciente y no cierre esta ventana durante el procesamiento.
+                    </div>
+                    
+                    <form id="process-data-form" method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'usuario_detail' usuario.id %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            <button id="process-data-btn" type="submit" class="btn btn-primary" {% if not usuario.url_cvlac and not usuario.url_linkedin %}disabled{% endif %}>
+                                <i class="fas fa-sync"></i> Procesar Datos
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Manejar el envío del formulario de procesamiento de datos
+    document.addEventListener('DOMContentLoaded', function() {
+        const processDataForm = document.getElementById('process-data-form');
+        const processDataBtn = document.getElementById('process-data-btn');
+        
+        if (processDataForm) {
+            processDataForm.addEventListener('submit', function(e) {
+                // Mostrar el modal de carga
+                showLoadingModal();
+                
+                // Deshabilitar el botón para evitar múltiples clics
+                processDataBtn.disabled = true;
+                processDataBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+                
+                // Continuar con el envío del formulario
+                return true;
+            });
+        }
+    });
+</script>
+{% endblock %} 

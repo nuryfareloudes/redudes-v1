@@ -1,0 +1,553 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ usuario.nombres }} {{ usuario.apellidos }} | REDUDES{% endblock %}
+
+{% block content %}
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{{ usuario.nombres }} {{ usuario.apellidos }}</h1>
+    <div>
+        <form id="process-data-form" method="post" action="{% url 'process_user_data' pk=usuario.id %}" class="d-inline">
+            {% csrf_token %}
+            <button id="process-data-btn" type="submit" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+                <i class="fas fa-sync-alt fa-sm text-white-50"></i> Procesar Datos
+            </button>
+        </form>
+        <a href="{% url 'usuario_update' pk=usuario.id %}" class="d-none d-sm-inline-block btn btn-sm btn-warning shadow-sm">
+            <i class="fas fa-edit fa-sm text-white-50"></i> Editar
+        </a>
+        <a href="{% url 'usuario_delete' pk=usuario.id %}" class="d-none d-sm-inline-block btn btn-sm btn-danger shadow-sm">
+            <i class="fas fa-trash-alt fa-sm text-white-50"></i> Eliminar
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Información del Usuario -->
+    <div class="col-lg-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Información Personal</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Email:</strong> {{ usuario.email }}</p>
+                        <p><strong>Teléfono:</strong> {{ usuario.telefono|default:"No disponible" }}</p>
+                        <p><strong>Cargo Actual:</strong> {{ usuario.cargo_actual|default:"No disponible" }}</p>
+                        <p><strong>Dependencia:</strong> {{ usuario.dependencia|default:"No disponible" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Fecha de Ingreso:</strong> {{ usuario.fecha_ingreso|date:"d/m/Y" }}</p>
+                        <p>
+                            <strong>CVLAC:</strong> 
+                            {% if usuario.url_cvlac %}
+                                <a href="{{ usuario.url_cvlac }}" target="_blank">Ver CVLAC</a>
+                            {% else %}
+                                No disponible
+                            {% endif %}
+                        </p>
+                        <p>
+                            <strong>LinkedIn:</strong> 
+                            {% if usuario.url_linkedin %}
+                                <a href="{{ usuario.url_linkedin }}" target="_blank">Ver LinkedIn</a>
+                            {% else %}
+                                No disponible
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Habilidades -->
+    <div class="col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Habilidades</h6>
+                <div class="dropdown no-arrow">
+                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLinkHabilidades" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLinkHabilidades">
+                        <div class="dropdown-header">Acciones:</div>
+                        <a class="dropdown-item" href="{% url 'add_user_skill' user_id=usuario.id %}">
+                            <i class="fas fa-plus fa-sm fa-fw mr-2 text-gray-400"></i> Agregar Habilidad
+                        </a>
+                        <a class="dropdown-item" href="#" data-toggle="modal" data-target="#addHabilidadModal">
+                            <i class="fas fa-bolt fa-sm fa-fw mr-2 text-gray-400"></i> Agregar Rápido
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if usuario.habilidades.all %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Habilidad</th>
+                                    <th>Experiencia</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for habilidad in usuario.habilidades.all %}
+                                    <tr>
+                                        <td>{{ habilidad.habilidad }}</td>
+                                        <td>{{ habilidad.experiencia }}</td>
+                                        <td>
+                                            <a href="{% url 'delete_user_skill' pk=habilidad.id %}" class="btn btn-danger btn-circle btn-sm">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center">
+                        <p class="text-muted mb-0">No hay habilidades registradas.</p>
+                        <a href="{% url 'add_user_skill' user_id=usuario.id %}" class="btn btn-primary btn-sm mt-3">
+                            <i class="fas fa-plus fa-sm"></i> Agregar Habilidad
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Conocimientos -->
+    <div class="col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Conocimientos</h6>
+                <div class="dropdown no-arrow">
+                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLinkConocimientos" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLinkConocimientos">
+                        <div class="dropdown-header">Acciones:</div>
+                        <a class="dropdown-item" href="{% url 'add_user_knowledge' user_id=usuario.id %}">
+                            <i class="fas fa-plus fa-sm fa-fw mr-2 text-gray-400"></i> Agregar Conocimiento
+                        </a>
+                        <a class="dropdown-item" href="#" data-toggle="modal" data-target="#addConocimientoModal">
+                            <i class="fas fa-bolt fa-sm fa-fw mr-2 text-gray-400"></i> Agregar Rápido
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if usuario.conocimientos.all %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Conocimiento</th>
+                                    <th>Nivel</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for conocimiento in usuario.conocimientos.all %}
+                                    <tr>
+                                        <td>{{ conocimiento.conocimiento }}</td>
+                                        <td>
+                                            {% if conocimiento.nivel == 1 %}
+                                                <span class="badge badge-light">Básico</span>
+                                            {% elif conocimiento.nivel == 2 %}
+                                                <span class="badge badge-info">Intermedio</span>
+                                            {% elif conocimiento.nivel == 3 %}
+                                                <span class="badge badge-primary">Avanzado</span>
+                                            {% else %}
+                                                <span class="badge badge-success">Experto</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'delete_user_knowledge' pk=conocimiento.id %}" class="btn btn-danger btn-circle btn-sm">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center">
+                        <p class="text-muted mb-0">No hay conocimientos registrados.</p>
+                        <a href="{% url 'add_user_knowledge' user_id=usuario.id %}" class="btn btn-primary btn-sm mt-3">
+                            <i class="fas fa-plus fa-sm"></i> Agregar Conocimiento
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Estudios -->
+    <div class="col-lg-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Estudios</h6>
+                <div class="dropdown no-arrow">
+                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLinkEstudios" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLinkEstudios">
+                        <div class="dropdown-header">Acciones:</div>
+                        <a class="dropdown-item" href="{% url 'add_user_study' user_id=usuario.id %}">
+                            <i class="fas fa-plus fa-sm fa-fw mr-2 text-gray-400"></i> Agregar Estudio
+                        </a>
+                        <a class="dropdown-item" href="#" data-toggle="modal" data-target="#addEstudioModal">
+                            <i class="fas fa-bolt fa-sm fa-fw mr-2 text-gray-400"></i> Agregar Rápido
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if usuario.estudios.all %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Estudio</th>
+                                    <th>Nivel</th>
+                                    <th>Año</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for estudio in usuario.estudios.all %}
+                                    <tr>
+                                        <td>{{ estudio.estudio }}</td>
+                                        <td>
+                                            {% if estudio.nivel == 1 %}
+                                                <span class="badge badge-secondary">Técnico</span>
+                                            {% elif estudio.nivel == 2 %}
+                                                <span class="badge badge-info">Tecnólogo</span>
+                                            {% elif estudio.nivel == 3 %}
+                                                <span class="badge badge-primary">Pregrado</span>
+                                            {% elif estudio.nivel == 4 %}
+                                                <span class="badge badge-success">Especialización</span>
+                                            {% elif estudio.nivel == 5 %}
+                                                <span class="badge badge-warning">Maestría</span>
+                                            {% elif estudio.nivel == 6 %}
+                                                <span class="badge badge-danger">Doctorado</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ estudio.year }}</td>
+                                        <td>
+                                            <a href="{% url 'delete_user_study' pk=estudio.id %}" class="btn btn-danger btn-circle btn-sm">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center">
+                        <p class="text-muted mb-0">No hay estudios registrados.</p>
+                        <a href="{% url 'add_user_study' user_id=usuario.id %}" class="btn btn-primary btn-sm mt-3">
+                            <i class="fas fa-plus fa-sm"></i> Agregar Estudio
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Experiencia -->
+    <div class="col-lg-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Experiencia</h6>
+                <div class="dropdown no-arrow">
+                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLinkExperiencia" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLinkExperiencia">
+                        <div class="dropdown-header">Acciones:</div>
+                        <a class="dropdown-item" href="{% url 'add_user_experience' user_id=usuario.id %}">
+                            <i class="fas fa-plus fa-sm fa-fw mr-2 text-gray-400"></i> Agregar Experiencia
+                        </a>
+                        <a class="dropdown-item" href="#" data-toggle="modal" data-target="#addExperienciaModal">
+                            <i class="fas fa-bolt fa-sm fa-fw mr-2 text-gray-400"></i> Agregar Rápido
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if usuario.experiencias.all %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Rol</th>
+                                    <th>Tiempo (años)</th>
+                                    <th>Actividades</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for exp in usuario.experiencias.all %}
+                                    <tr>
+                                        <td>{{ exp.rol }}</td>
+                                        <td>{{ exp.tiempo }}</td>
+                                        <td>{{ exp.actividades|truncatechars:50 }}</td>
+                                        <td>
+                                            <a href="{% url 'delete_user_experience' pk=exp.id %}" class="btn btn-danger btn-circle btn-sm">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center">
+                        <p class="text-muted mb-0">No hay experiencia registrada.</p>
+                        <a href="{% url 'add_user_experience' user_id=usuario.id %}" class="btn btn-primary btn-sm mt-3">
+                            <i class="fas fa-plus fa-sm"></i> Agregar Experiencia
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para agregar habilidad rápidamente -->
+<div class="modal fade" id="addHabilidadModal" tabindex="-1" role="dialog" aria-labelledby="addHabilidadModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addHabilidadModalLabel">Agregar Habilidad</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{% url 'add_user_skill' user_id=usuario.id %}" method="post" id="quickHabilidadForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="modal_habilidad">Habilidad <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="modal_habilidad" name="habilidad" required placeholder="Ej: Programación en Python">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_experiencia">Experiencia <span class="text-danger">*</span></label>
+                        <select class="form-control" id="modal_experiencia" name="experiencia" required>
+                            <option value="" selected>Seleccione nivel de experiencia</option>
+                            <option value="Menos de 1 año">Menos de 1 año</option>
+                            <option value="1-2 años">1-2 años</option>
+                            <option value="3-5 años">3-5 años</option>
+                            <option value="5-10 años">5-10 años</option>
+                            <option value="Más de 10 años">Más de 10 años</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para agregar conocimiento rápidamente -->
+<div class="modal fade" id="addConocimientoModal" tabindex="-1" role="dialog" aria-labelledby="addConocimientoModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addConocimientoModalLabel">Agregar Conocimiento</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{% url 'add_user_knowledge' user_id=usuario.id %}" method="post" id="quickConocimientoForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="modal_conocimiento">Conocimiento <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="modal_conocimiento" name="conocimiento" required placeholder="Ej: Inteligencia Artificial">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_nivel">Nivel <span class="text-danger">*</span></label>
+                        <select class="form-control" id="modal_nivel" name="nivel" required>
+                            <option value="" selected>Seleccione nivel de conocimiento</option>
+                            <option value="1">Básico</option>
+                            <option value="2">Intermedio</option>
+                            <option value="3">Avanzado</option>
+                            <option value="4">Experto</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para agregar estudio rápidamente -->
+<div class="modal fade" id="addEstudioModal" tabindex="-1" role="dialog" aria-labelledby="addEstudioModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addEstudioModalLabel">Agregar Estudio</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{% url 'add_user_study' user_id=usuario.id %}" method="post" id="quickEstudioForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="modal_estudio">Título obtenido <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="modal_estudio" name="estudio" required placeholder="Ej: Ingeniería de Sistemas">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_nivel_estudio">Nivel académico <span class="text-danger">*</span></label>
+                        <select class="form-control" id="modal_nivel_estudio" name="nivel" required>
+                            <option value="" selected>Seleccione nivel académico</option>
+                            <option value="1">Técnico</option>
+                            <option value="2">Tecnólogo</option>
+                            <option value="3">Pregrado</option>
+                            <option value="4">Especialización</option>
+                            <option value="5">Maestría</option>
+                            <option value="6">Doctorado</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_year">Año de graduación <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="modal_year" name="year" required min="1950" max="{{ current_year }}" placeholder="Ej: 2015">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para agregar experiencia rápidamente -->
+<div class="modal fade" id="addExperienciaModal" tabindex="-1" role="dialog" aria-labelledby="addExperienciaModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addExperienciaModalLabel">Agregar Experiencia</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{% url 'add_user_experience' user_id=usuario.id %}" method="post" id="quickExperienciaForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="modal_rol">Cargo o Rol <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="modal_rol" name="rol" required placeholder="Ej: Desarrollador Senior">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_tiempo">Tiempo (años) <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="modal_tiempo" name="tiempo" required min="1" max="50" placeholder="Ej: 3">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_actividades">Actividades y Responsabilidades <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="modal_actividades" name="actividades" rows="3" required placeholder="Describa las principales actividades..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Configuración para el formulario de procesamiento de datos
+        const processDataForm = document.getElementById('process-data-form');
+        const processDataBtn = document.getElementById('process-data-btn');
+        
+        if (processDataForm) {
+            processDataForm.addEventListener('submit', function(e) {
+                // Mostrar el modal de carga
+                showLoadingModal();
+                
+                // Deshabilitar el botón para evitar múltiples clics
+                processDataBtn.disabled = true;
+                processDataBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+                
+                // Continuar con el envío del formulario
+                return true;
+            });
+        }
+        
+        // Configuración para los formularios rápidos
+        const quickForms = [
+            document.getElementById('quickHabilidadForm'),
+            document.getElementById('quickConocimientoForm'),
+            document.getElementById('quickEstudioForm'),
+            document.getElementById('quickExperienciaForm')
+        ];
+        
+        // Establecer el año máximo como el año actual
+        const currentYear = new Date().getFullYear();
+        document.getElementById('modal_year').setAttribute('max', currentYear);
+        
+        // Agregar validación y comportamiento a cada formulario rápido
+        quickForms.forEach(form => {
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    // Validar campos requeridos
+                    const requiredFields = form.querySelectorAll('[required]');
+                    let isValid = true;
+                    
+                    requiredFields.forEach(field => {
+                        if (!field.value.trim()) {
+                            isValid = false;
+                            field.classList.add('is-invalid');
+                        } else {
+                            field.classList.remove('is-invalid');
+                        }
+                    });
+                    
+                    if (!isValid) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    
+                    // Mostrar modal de carga
+                    showLoadingModal();
+                    
+                    // Cerrar el modal actual
+                    const modalElement = form.closest('.modal');
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) {
+                        modal.hide();
+                    } else {
+                        $(modalElement).modal('hide');
+                    }
+                    
+                    return true;
+                });
+            }
+        });
+    });
+</script>
+{% endblock %} 
