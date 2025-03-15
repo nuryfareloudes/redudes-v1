@@ -1,0 +1,32 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Eliminar Aliado | {{ proyecto.nombre }} | REDUDES{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-danger text-white">
+            <h2 class="mb-0">Confirmar Eliminación</h2>
+        </div>
+        <div class="card-body">
+            <p class="lead">¿Está seguro que desea eliminar el aliado <strong>"{{ object.entidad }}"</strong> del proyecto <strong>"{{ proyecto.nombre }}"</strong>?</p>
+            
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i> Esta acción no se puede deshacer.
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-flex justify-content-end mt-4">
+                    <a href="{% url 'proyecto_detail' pk=proyecto.id %}" class="btn btn-secondary me-2">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

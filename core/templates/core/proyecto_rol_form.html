@@ -1,0 +1,108 @@
+{% extends 'core/base.html' %}
+
+{% block title %}
+    {% if form.instance.id %}
+        Editar Rol | {{ proyecto.nombre }}
+    {% else %}
+        Agregar Rol | {{ proyecto.nombre }}
+    {% endif %} | REDUDES
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+            <h2 class="mb-0">
+                {% if form.instance.id %}
+                    Editar Rol
+                {% else %}
+                    Agregar Rol
+                {% endif %}
+            </h2>
+            <div>
+                <span class="badge bg-light text-dark">{{ proyecto.nombre }}</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="post" id="rolForm" class="show-loading" data-validate="id_rol">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="id_rol" class="form-label">Rol <span class="text-danger">*</span></label>
+                    <input type="text" name="rol" id="id_rol" class="form-control {% if form.rol.errors %}is-invalid{% endif %}" value="{{ form.rol.value|default:'' }}" required placeholder="Ej: Desarrollador Senior">
+                    {% if form.rol.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.rol.errors }}
+                        </div>
+                    {% endif %}
+                    <div id="id_rol-error" class="invalid-feedback" style="display: none;">
+                        Este campo es obligatorio.
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="id_habilidades" class="form-label">Habilidades</label>
+                    <input type="text" name="habilidades" id="id_habilidades" class="form-control {% if form.habilidades.errors %}is-invalid{% endif %}" value="{{ form.habilidades.value|default:'' }}" placeholder="Ej: Python, Django, SQL">
+                    {% if form.habilidades.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.habilidades.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="id_experiencia" class="form-label">Experiencia</label>
+                    <input type="text" name="experiencia" id="id_experiencia" class="form-control {% if form.experiencia.errors %}is-invalid{% endif %}" value="{{ form.experiencia.value|default:'' }}" placeholder="Ej: 3-5 años en desarrollo web">
+                    {% if form.experiencia.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.experiencia.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="id_conocimientos" class="form-label">Conocimientos</label>
+                    <input type="text" name="conocimientos" id="id_conocimientos" class="form-control {% if form.conocimientos.errors %}is-invalid{% endif %}" value="{{ form.conocimientos.value|default:'' }}" placeholder="Ej: Bases de datos, APIs REST">
+                    {% if form.conocimientos.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.conocimientos.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex justify-content-end mt-4">
+                    <a href="{% url 'proyecto_detail' pk=proyecto.id %}" class="btn btn-secondary me-2">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('rolForm');
+        
+        form.addEventListener('submit', function(e) {
+            const rolInput = document.getElementById('id_rol');
+            
+            if (!rolInput.value.trim()) {
+                e.preventDefault();
+                alert('Por favor, ingrese un rol.');
+                rolInput.focus();
+                return false;
+            }
+            
+            // Mostrar modal de carga
+            showLoadingModal();
+            return true;
+        });
+    });
+</script>
+{% endblock %} 

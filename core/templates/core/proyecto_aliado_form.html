@@ -1,0 +1,117 @@
+{% extends 'core/base.html' %}
+
+{% block title %}
+    {% if form.instance.id %}
+        Editar Aliado | {{ proyecto.nombre }}
+    {% else %}
+        Agregar Aliado | {{ proyecto.nombre }}
+    {% endif %} | REDUDES
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+            <h2 class="mb-0">
+                {% if form.instance.id %}
+                    Editar Aliado
+                {% else %}
+                    Agregar Aliado
+                {% endif %}
+            </h2>
+            <div>
+                <span class="badge bg-light text-dark">{{ proyecto.nombre }}</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="post" id="aliadoForm" class="show-loading" data-validate="id_entidad,id_tipo_aliado">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="id_entidad" class="form-label">Entidad <span class="text-danger">*</span></label>
+                    <input type="text" name="entidad" id="id_entidad" class="form-control {% if form.entidad.errors %}is-invalid{% endif %}" value="{{ form.entidad.value|default:'' }}" required placeholder="Ej: Universidad Nacional">
+                    {% if form.entidad.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.entidad.errors }}
+                        </div>
+                    {% endif %}
+                    <div id="id_entidad-error" class="invalid-feedback" style="display: none;">
+                        Este campo es obligatorio.
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="id_tipo_aliado" class="form-label">Tipo de Aliado <span class="text-danger">*</span></label>
+                    <select class="form-select {% if form.tipo_aliado.errors %}is-invalid{% endif %}" id="id_tipo_aliado" name="tipo_aliado" required>
+                        <option value="" {% if not form.tipo_aliado.value %}selected{% endif %}>Seleccione tipo de aliado</option>
+                        <option value="Académico" {% if form.tipo_aliado.value == "Académico" %}selected{% endif %}>Académico</option>
+                        <option value="Empresarial" {% if form.tipo_aliado.value == "Empresarial" %}selected{% endif %}>Empresarial</option>
+                        <option value="Gubernamental" {% if form.tipo_aliado.value == "Gubernamental" %}selected{% endif %}>Gubernamental</option>
+                        <option value="ONG" {% if form.tipo_aliado.value == "ONG" %}selected{% endif %}>ONG</option>
+                        <option value="Internacional" {% if form.tipo_aliado.value == "Internacional" %}selected{% endif %}>Internacional</option>
+                        <option value="Otro" {% if form.tipo_aliado.value == "Otro" %}selected{% endif %}>Otro</option>
+                    </select>
+                    {% if form.tipo_aliado.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.tipo_aliado.errors }}
+                        </div>
+                    {% endif %}
+                    <div id="id_tipo_aliado-error" class="invalid-feedback" style="display: none;">
+                        Este campo es obligatorio.
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="id_responsabilidades" class="form-label">Responsabilidades</label>
+                    <textarea class="form-control {% if form.responsabilidades.errors %}is-invalid{% endif %}" id="id_responsabilidades" name="responsabilidades" rows="4" placeholder="Describa las responsabilidades del aliado...">{{ form.responsabilidades.value|default:'' }}</textarea>
+                    {% if form.responsabilidades.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.responsabilidades.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex justify-content-end mt-4">
+                    <a href="{% url 'proyecto_detail' pk=proyecto.id %}" class="btn btn-secondary me-2">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('aliadoForm');
+        
+        form.addEventListener('submit', function(e) {
+            const entidadInput = document.getElementById('id_entidad');
+            const tipoAliadoSelect = document.getElementById('id_tipo_aliado');
+            
+            if (!entidadInput.value.trim()) {
+                e.preventDefault();
+                alert('Por favor, ingrese una entidad.');
+                entidadInput.focus();
+                return false;
+            }
+            
+            if (!tipoAliadoSelect.value) {
+                e.preventDefault();
+                alert('Por favor, seleccione un tipo de aliado.');
+                tipoAliadoSelect.focus();
+                return false;
+            }
+            
+            // Mostrar modal de carga
+            showLoadingModal();
+            return true;
+        });
+    });
+</script>
+{% endblock %} 

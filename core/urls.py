@@ -36,6 +36,27 @@ urlpatterns = [
     path('usuarios/<int:user_id>/experiencia/agregar/', views.add_user_experience, name='add_user_experience'),
     path('experiencia/<int:pk>/eliminar/', views.delete_user_experience, name='delete_user_experience'),
     
+    # URLs para gestión de roles de proyecto
+    path('proyectos/<int:pk>/roles/crear/', views.ProyectoRolCreateView.as_view(), name='proyecto_rol_create'),
+    path('proyectos/roles/<int:rol_pk>/editar/', views.ProyectoRolUpdateView.as_view(), name='proyecto_rol_update'),
+    path('proyectos/roles/<int:rol_pk>/eliminar/', views.ProyectoRolDeleteView.as_view(), name='proyecto_rol_delete'),
+    path('proyectos/<int:proyecto_id>/roles/agregar/', views.add_proyecto_rol, name='add_proyecto_rol'),
+    path('proyectos/roles/<int:pk>/eliminar-rapido/', views.delete_proyecto_rol, name='delete_proyecto_rol'),
+    
+    # URLs para gestión de aliados de proyecto
+    path('proyectos/<int:pk>/aliados/crear/', views.ProyectoAliadoCreateView.as_view(), name='proyecto_aliado_create'),
+    path('proyectos/aliados/<int:aliado_pk>/editar/', views.ProyectoAliadoUpdateView.as_view(), name='proyecto_aliado_update'),
+    path('proyectos/aliados/<int:aliado_pk>/eliminar/', views.ProyectoAliadoDeleteView.as_view(), name='proyecto_aliado_delete'),
+    path('proyectos/<int:proyecto_id>/aliados/agregar/', views.add_proyecto_aliado, name='add_proyecto_aliado'),
+    path('proyectos/aliados/<int:pk>/eliminar-rapido/', views.delete_proyecto_aliado, name='delete_proyecto_aliado'),
+    
+    # URLs para gestión de productos de proyecto
+    path('proyectos/<int:pk>/productos/crear/', views.ProyectoProductoCreateView.as_view(), name='proyecto_producto_create'),
+    path('proyectos/productos/<int:producto_pk>/editar/', views.ProyectoProductoUpdateView.as_view(), name='proyecto_producto_update'),
+    path('proyectos/productos/<int:producto_pk>/eliminar/', views.ProyectoProductoDeleteView.as_view(), name='proyecto_producto_delete'),
+    path('proyectos/<int:proyecto_id>/productos/agregar/', views.add_proyecto_producto, name='add_proyecto_producto'),
+    path('proyectos/productos/<int:pk>/eliminar-rapido/', views.delete_proyecto_producto, name='delete_proyecto_producto'),
+    
     # Autenticación
     path('login/', auth_views.LoginView.as_view(template_name='core/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login', template_name='core/logout.html'), name='logout'),

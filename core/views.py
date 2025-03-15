@@ -821,3 +821,414 @@ def task_history_view(request):
         'tasks': tasks,
         'title': 'Historial de Tareas'
     })
+
+# Formularios para datos de proyecto
+class ProyectoRolForm(forms.ModelForm):
+    class Meta:
+        model = ProyectoRoles
+        fields = ['rol', 'habilidades', 'experiencia', 'conocimientos']
+        widgets = {
+            'habilidades': forms.TextInput(attrs={'placeholder': 'Ej: Python, Django, SQL'}),
+            'experiencia': forms.TextInput(attrs={'placeholder': 'Ej: 3-5 años en desarrollo web'}),
+            'conocimientos': forms.TextInput(attrs={'placeholder': 'Ej: Bases de datos, APIs REST'}),
+        }
+
+class ProyectoAliadoForm(forms.ModelForm):
+    TIPO_ALIADO_CHOICES = [
+        ('', 'Seleccione tipo de aliado'),
+        ('Académico', 'Académico'),
+        ('Empresarial', 'Empresarial'),
+        ('Gubernamental', 'Gubernamental'),
+        ('ONG', 'ONG'),
+        ('Internacional', 'Internacional'),
+        ('Otro', 'Otro'),
+    ]
+    
+    tipo_aliado = forms.ChoiceField(choices=TIPO_ALIADO_CHOICES, required=True)
+    
+    class Meta:
+        model = ProyectoAliados
+        fields = ['entidad', 'tipo_aliado', 'responsabilidades']
+        widgets = {
+            'responsabilidades': forms.Textarea(attrs={'rows': 3}),
+        }
+
+class ProyectoProductoForm(forms.ModelForm):
+    TIPO_PRODUCTO_CHOICES = [
+        ('', 'Seleccione tipo de producto'),
+        ('Software', 'Software'),
+        ('Hardware', 'Hardware'),
+        ('Documento', 'Documento'),
+        ('Servicio', 'Servicio'),
+        ('Capacitación', 'Capacitación'),
+        ('Otro', 'Otro'),
+    ]
+    
+    tipo = forms.ChoiceField(choices=TIPO_PRODUCTO_CHOICES, required=True)
+    
+    class Meta:
+        model = ProyectoProductos
+        fields = ['producto', 'tipo', 'cantidad']
+        widgets = {
+            'cantidad': forms.NumberInput(attrs={'min': 1}),
+        }
+
+# Vistas para Roles de Proyecto
+class ProyectoRolCreateView(LoginRequiredMixin, CreateView):
+    model = ProyectoRoles
+    form_class = ProyectoRolForm
+    template_name = 'core/proyecto_rol_form.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['proyecto'] = get_object_or_404(Proyecto, pk=self.kwargs['pk'])
+        return context
+    
+    def form_valid(self, form):
+        form.instance.project_id = get_object_or_404(Proyecto, pk=self.kwargs['pk'])
+        messages.success(self.request, 'Rol agregado exitosamente.')
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse_lazy('proyecto_detail', kwargs={'pk': self.kwargs['pk']})
+
+class ProyectoRolUpdateView(LoginRequiredMixin, UpdateView):
+    model = ProyectoRoles
+    form_class = ProyectoRolForm
+    template_name = 'core/proyecto_rol_form.html'
+    pk_url_kwarg = 'rol_pk'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['proyecto'] = self.object.project_id
+        return context
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'Rol actualizado exitosamente.')
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse_lazy('proyecto_detail', kwargs={'pk': self.object.project_id.id})
+
+class ProyectoRolDeleteView(LoginRequiredMixin, DeleteView):
+    model = ProyectoRoles
+    template_name = 'core/proyecto_rol_confirm_delete.html'
+    pk_url_kwarg = 'rol_pk'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['proyecto'] = self.object.project_id
+        return context
+    
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, 'Rol eliminado exitosamente.')
+        return super().delete(request, *args, **kwargs)
+    
+    def get_success_url(self):
+        return reverse_lazy('proyecto_detail', kwargs={'pk': self.object.project_id.id})
+
+# Vistas para Aliados de Proyecto
+class ProyectoAliadoCreateView(LoginRequiredMixin, CreateView):
+    model = ProyectoAliados
+    form_class = ProyectoAliadoForm
+    template_name = 'core/proyecto_aliado_form.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['proyecto'] = get_object_or_404(Proyecto, pk=self.kwargs['pk'])
+        return context
+    
+    def form_valid(self, form):
+        form.instance.project_id = get_object_or_404(Proyecto, pk=self.kwargs['pk'])
+        messages.success(self.request, 'Aliado agregado exitosamente.')
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse_lazy('proyecto_detail', kwargs={'pk': self.kwargs['pk']})
+
+class ProyectoAliadoUpdateView(LoginRequiredMixin, UpdateView):
+    model = ProyectoAliados
+    form_class = ProyectoAliadoForm
+    template_name = 'core/proyecto_aliado_form.html'
+    pk_url_kwarg = 'aliado_pk'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['proyecto'] = self.object.project_id
+        return context
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'Aliado actualizado exitosamente.')
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse_lazy('proyecto_detail', kwargs={'pk': self.object.project_id.id})
+
+class ProyectoAliadoDeleteView(LoginRequiredMixin, DeleteView):
+    model = ProyectoAliados
+    template_name = 'core/proyecto_aliado_confirm_delete.html'
+    pk_url_kwarg = 'aliado_pk'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['proyecto'] = self.object.project_id
+        return context
+    
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, 'Aliado eliminado exitosamente.')
+        return super().delete(request, *args, **kwargs)
+    
+    def get_success_url(self):
+        return reverse_lazy('proyecto_detail', kwargs={'pk': self.object.project_id.id})
+
+# Vistas para Productos de Proyecto
+class ProyectoProductoCreateView(LoginRequiredMixin, CreateView):
+    model = ProyectoProductos
+    form_class = ProyectoProductoForm
+    template_name = 'core/proyecto_producto_form.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['proyecto'] = get_object_or_404(Proyecto, pk=self.kwargs['pk'])
+        return context
+    
+    def form_valid(self, form):
+        form.instance.project_id = get_object_or_404(Proyecto, pk=self.kwargs['pk'])
+        messages.success(self.request, 'Producto agregado exitosamente.')
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse_lazy('proyecto_detail', kwargs={'pk': self.kwargs['pk']})
+
+class ProyectoProductoUpdateView(LoginRequiredMixin, UpdateView):
+    model = ProyectoProductos
+    form_class = ProyectoProductoForm
+    template_name = 'core/proyecto_producto_form.html'
+    pk_url_kwarg = 'producto_pk'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['proyecto'] = self.object.project_id
+        return context
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'Producto actualizado exitosamente.')
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse_lazy('proyecto_detail', kwargs={'pk': self.object.project_id.id})
+
+class ProyectoProductoDeleteView(LoginRequiredMixin, DeleteView):
+    model = ProyectoProductos
+    template_name = 'core/proyecto_producto_confirm_delete.html'
+    pk_url_kwarg = 'producto_pk'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['proyecto'] = self.object.project_id
+        return context
+    
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, 'Producto eliminado exitosamente.')
+        return super().delete(request, *args, **kwargs)
+    
+    def get_success_url(self):
+        return reverse_lazy('proyecto_detail', kwargs={'pk': self.object.project_id.id})
+
+@login_required
+def add_proyecto_rol(request, proyecto_id):
+    """
+    Vista para añadir un rol a un proyecto
+    """
+    proyecto = get_object_or_404(Proyecto, id=proyecto_id)
+    
+    if request.method == 'POST':
+        try:
+            rol = request.POST.get('rol', '').strip()
+            habilidades = request.POST.get('habilidades', '').strip()
+            experiencia = request.POST.get('experiencia', '').strip()
+            conocimientos = request.POST.get('conocimientos', '').strip()
+            
+            if not rol:
+                messages.error(request, "El rol no puede estar vacío.")
+                return redirect('proyecto_detail', pk=proyecto_id)
+            
+            # Verificar si ya existe
+            existing = ProyectoRoles.objects.filter(
+                project_id=proyecto,
+                rol__iexact=rol
+            ).first()
+            
+            if existing:
+                messages.warning(request, f"El rol '{rol}' ya existe para este proyecto.")
+            else:
+                ProyectoRoles.objects.create(
+                    project_id=proyecto,
+                    rol=rol,
+                    habilidades=habilidades,
+                    experiencia=experiencia,
+                    conocimientos=conocimientos
+                )
+                messages.success(request, f"Rol '{rol}' añadido exitosamente.")
+        
+        except Exception as e:
+            logger.error(f"Error al añadir rol: {str(e)}")
+            messages.error(request, f"Error al añadir rol: {str(e)}")
+        
+        return redirect('proyecto_detail', pk=proyecto_id)
+    
+    # Si es una solicitud GET, mostrar el formulario
+    context = {
+        'proyecto': proyecto,
+        'form': ProyectoRolForm()
+    }
+    return render(request, 'core/proyecto_rol_form.html', context)
+
+@login_required
+def add_proyecto_aliado(request, proyecto_id):
+    """
+    Vista para añadir un aliado a un proyecto
+    """
+    proyecto = get_object_or_404(Proyecto, id=proyecto_id)
+    
+    if request.method == 'POST':
+        try:
+            entidad = request.POST.get('entidad', '').strip()
+            tipo_aliado = request.POST.get('tipo_aliado', '').strip()
+            responsabilidades = request.POST.get('responsabilidades', '').strip()
+            
+            if not entidad:
+                messages.error(request, "La entidad no puede estar vacía.")
+                return redirect('proyecto_detail', pk=proyecto_id)
+            
+            # Verificar si ya existe
+            existing = ProyectoAliados.objects.filter(
+                project_id=proyecto,
+                entidad__iexact=entidad
+            ).first()
+            
+            if existing:
+                messages.warning(request, f"El aliado '{entidad}' ya existe para este proyecto.")
+            else:
+                ProyectoAliados.objects.create(
+                    project_id=proyecto,
+                    entidad=entidad,
+                    tipo_aliado=tipo_aliado,
+                    responsabilidades=responsabilidades
+                )
+                messages.success(request, f"Aliado '{entidad}' añadido exitosamente.")
+        
+        except Exception as e:
+            logger.error(f"Error al añadir aliado: {str(e)}")
+            messages.error(request, f"Error al añadir aliado: {str(e)}")
+        
+        return redirect('proyecto_detail', pk=proyecto_id)
+    
+    # Si es una solicitud GET, mostrar el formulario
+    context = {
+        'proyecto': proyecto,
+        'form': ProyectoAliadoForm()
+    }
+    return render(request, 'core/proyecto_aliado_form.html', context)
+
+@login_required
+def add_proyecto_producto(request, proyecto_id):
+    """
+    Vista para añadir un producto a un proyecto
+    """
+    proyecto = get_object_or_404(Proyecto, id=proyecto_id)
+    
+    if request.method == 'POST':
+        try:
+            producto = request.POST.get('producto', '').strip()
+            tipo = request.POST.get('tipo', '').strip()
+            cantidad = request.POST.get('cantidad', '').strip()
+            
+            if not producto:
+                messages.error(request, "El producto no puede estar vacío.")
+                return redirect('proyecto_detail', pk=proyecto_id)
+            
+            # Verificar si ya existe
+            existing = ProyectoProductos.objects.filter(
+                project_id=proyecto,
+                producto__iexact=producto,
+                tipo=tipo
+            ).first()
+            
+            if existing:
+                messages.warning(request, f"El producto '{producto}' ya existe para este proyecto.")
+            else:
+                ProyectoProductos.objects.create(
+                    project_id=proyecto,
+                    producto=producto,
+                    tipo=tipo,
+                    cantidad=cantidad
+                )
+                messages.success(request, f"Producto '{producto}' añadido exitosamente.")
+        
+        except Exception as e:
+            logger.error(f"Error al añadir producto: {str(e)}")
+            messages.error(request, f"Error al añadir producto: {str(e)}")
+        
+        return redirect('proyecto_detail', pk=proyecto_id)
+    
+    # Si es una solicitud GET, mostrar el formulario
+    context = {
+        'proyecto': proyecto,
+        'form': ProyectoProductoForm()
+    }
+    return render(request, 'core/proyecto_producto_form.html', context)
+
+@login_required
+def delete_proyecto_rol(request, pk):
+    """
+    Vista para eliminar un rol de un proyecto
+    """
+    try:
+        rol = get_object_or_404(ProyectoRoles, id=pk)
+        proyecto_id = rol.project_id.id
+        rol_nombre = rol.rol
+        rol.delete()
+        messages.success(request, f"Rol '{rol_nombre}' eliminado exitosamente.")
+    except Exception as e:
+        logger.error(f"Error al eliminar rol: {str(e)}")
+        messages.error(request, f"Error al eliminar rol: {str(e)}")
+        proyecto_id = request.GET.get('proyecto_id')
+    
+    return redirect('proyecto_detail', pk=proyecto_id)
+
+@login_required
+def delete_proyecto_aliado(request, pk):
+    """
+    Vista para eliminar un aliado de un proyecto
+    """
+    try:
+        aliado = get_object_or_404(ProyectoAliados, id=pk)
+        proyecto_id = aliado.project_id.id
+        aliado_nombre = aliado.entidad
+        aliado.delete()
+        messages.success(request, f"Aliado '{aliado_nombre}' eliminado exitosamente.")
+    except Exception as e:
+        logger.error(f"Error al eliminar aliado: {str(e)}")
+        messages.error(request, f"Error al eliminar aliado: {str(e)}")
+        proyecto_id = request.GET.get('proyecto_id')
+    
+    return redirect('proyecto_detail', pk=proyecto_id)
+
+@login_required
+def delete_proyecto_producto(request, pk):
+    """
+    Vista para eliminar un producto de un proyecto
+    """
+    try:
+        producto = get_object_or_404(ProyectoProductos, id=pk)
+        proyecto_id = producto.project_id.id
+        producto_nombre = producto.producto
+        producto.delete()
+        messages.success(request, f"Producto '{producto_nombre}' eliminado exitosamente.")
+    except Exception as e:
+        logger.error(f"Error al eliminar producto: {str(e)}")
+        messages.error(request, f"Error al eliminar producto: {str(e)}")
+        proyecto_id = request.GET.get('proyecto_id')
+    
+    return redirect('proyecto_detail', pk=proyecto_id)

@@ -69,9 +69,19 @@
                             <div class="card">
                                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0">Roles del Proyecto</h5>
-                                    <a href="#" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-plus"></i> Agregar Rol
-                                    </a>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="dropdownRolButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <i class="fas fa-plus"></i> Agregar Rol
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownRolButton">
+                                            <a class="dropdown-item" href="{% url 'add_proyecto_rol' proyecto_id=proyecto.id %}">
+                                                <i class="fas fa-file-alt fa-sm fa-fw mr-2 text-gray-400"></i> Formulario Completo
+                                            </a>
+                                            <a class="dropdown-item" href="#" data-toggle="modal" data-target="#addRolModal">
+                                                <i class="fas fa-bolt fa-sm fa-fw mr-2 text-gray-400"></i> Agregar Rápido
+                                            </a>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="card-body">
                                     {% if proyecto_roles %}
@@ -95,10 +105,10 @@
                                                     <td>{{ rol.conocimientos }}</td>
                                                     <td>
                                                         <div class="btn-group" role="group">
-                                                            <a href="#" class="btn btn-sm btn-warning">
+                                                            <a href="{% url 'proyecto_rol_update' rol_pk=rol.id %}" class="btn btn-sm btn-warning">
                                                                 <i class="fas fa-edit"></i>
                                                             </a>
-                                                            <a href="#" class="btn btn-sm btn-danger">
+                                                            <a href="{% url 'delete_proyecto_rol' pk=rol.id %}" class="btn btn-sm btn-danger">
                                                                 <i class="fas fa-trash"></i>
                                                             </a>
                                                         </div>
@@ -124,9 +134,19 @@
                             <div class="card">
                                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0">Aliados del Proyecto</h5>
-                                    <a href="#" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-plus"></i> Agregar Aliado
-                                    </a>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="dropdownAliadoButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <i class="fas fa-plus"></i> Agregar Aliado
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownAliadoButton">
+                                            <a class="dropdown-item" href="{% url 'add_proyecto_aliado' proyecto_id=proyecto.id %}">
+                                                <i class="fas fa-file-alt fa-sm fa-fw mr-2 text-gray-400"></i> Formulario Completo
+                                            </a>
+                                            <a class="dropdown-item" href="#" data-toggle="modal" data-target="#addAliadoModal">
+                                                <i class="fas fa-bolt fa-sm fa-fw mr-2 text-gray-400"></i> Agregar Rápido
+                                            </a>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="card-body">
                                     {% if proyecto_aliados %}
@@ -148,10 +168,10 @@
                                                     <td>{{ aliado.responsabilidades|truncatewords:10 }}</td>
                                                     <td>
                                                         <div class="btn-group" role="group">
-                                                            <a href="#" class="btn btn-sm btn-warning">
+                                                            <a href="{% url 'proyecto_aliado_update' aliado_pk=aliado.id %}" class="btn btn-sm btn-warning">
                                                                 <i class="fas fa-edit"></i>
                                                             </a>
-                                                            <a href="#" class="btn btn-sm btn-danger">
+                                                            <a href="{% url 'delete_proyecto_aliado' pk=aliado.id %}" class="btn btn-sm btn-danger">
                                                                 <i class="fas fa-trash"></i>
                                                             </a>
                                                         </div>
@@ -177,9 +197,19 @@
                             <div class="card">
                                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0">Productos del Proyecto</h5>
-                                    <a href="#" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-plus"></i> Agregar Producto
-                                    </a>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="dropdownProductoButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <i class="fas fa-plus"></i> Agregar Producto
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownProductoButton">
+                                            <a class="dropdown-item" href="{% url 'add_proyecto_producto' proyecto_id=proyecto.id %}">
+                                                <i class="fas fa-file-alt fa-sm fa-fw mr-2 text-gray-400"></i> Formulario Completo
+                                            </a>
+                                            <a class="dropdown-item" href="#" data-toggle="modal" data-target="#addProductoModal">
+                                                <i class="fas fa-bolt fa-sm fa-fw mr-2 text-gray-400"></i> Agregar Rápido
+                                            </a>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="card-body">
                                     {% if proyecto_productos %}
@@ -201,10 +231,10 @@
                                                     <td>{{ producto.cantidad }}</td>
                                                     <td>
                                                         <div class="btn-group" role="group">
-                                                            <a href="#" class="btn btn-sm btn-warning">
+                                                            <a href="{% url 'proyecto_producto_update' producto_pk=producto.id %}" class="btn btn-sm btn-warning">
                                                                 <i class="fas fa-edit"></i>
                                                             </a>
-                                                            <a href="#" class="btn btn-sm btn-danger">
+                                                            <a href="{% url 'delete_proyecto_producto' pk=producto.id %}" class="btn btn-sm btn-danger">
                                                                 <i class="fas fa-trash"></i>
                                                             </a>
                                                         </div>
@@ -234,4 +264,181 @@
         </div>
     </div>
 </div>
+
+<!-- Modal para agregar rol rápidamente -->
+<div class="modal fade" id="addRolModal" tabindex="-1" role="dialog" aria-labelledby="addRolModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addRolModalLabel">Agregar Rol</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{% url 'add_proyecto_rol' proyecto_id=proyecto.id %}" method="post" id="quickRolForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="modal_rol">Rol <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="modal_rol" name="rol" required placeholder="Ej: Desarrollador Senior">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_habilidades">Habilidades</label>
+                        <input type="text" class="form-control" id="modal_habilidades" name="habilidades" placeholder="Ej: Python, Django, SQL">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_experiencia">Experiencia</label>
+                        <input type="text" class="form-control" id="modal_experiencia" name="experiencia" placeholder="Ej: 3-5 años en desarrollo web">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_conocimientos">Conocimientos</label>
+                        <input type="text" class="form-control" id="modal_conocimientos" name="conocimientos" placeholder="Ej: Bases de datos, APIs REST">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para agregar aliado rápidamente -->
+<div class="modal fade" id="addAliadoModal" tabindex="-1" role="dialog" aria-labelledby="addAliadoModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addAliadoModalLabel">Agregar Aliado</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{% url 'add_proyecto_aliado' proyecto_id=proyecto.id %}" method="post" id="quickAliadoForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="modal_entidad">Entidad <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="modal_entidad" name="entidad" required placeholder="Ej: Universidad Nacional">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_tipo_aliado">Tipo de Aliado <span class="text-danger">*</span></label>
+                        <select class="form-control" id="modal_tipo_aliado" name="tipo_aliado" required>
+                            <option value="" selected>Seleccione tipo de aliado</option>
+                            <option value="Académico">Académico</option>
+                            <option value="Empresarial">Empresarial</option>
+                            <option value="Gubernamental">Gubernamental</option>
+                            <option value="ONG">ONG</option>
+                            <option value="Internacional">Internacional</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_responsabilidades">Responsabilidades</label>
+                        <textarea class="form-control" id="modal_responsabilidades" name="responsabilidades" rows="3" placeholder="Describa las responsabilidades del aliado..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para agregar producto rápidamente -->
+<div class="modal fade" id="addProductoModal" tabindex="-1" role="dialog" aria-labelledby="addProductoModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addProductoModalLabel">Agregar Producto</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{% url 'add_proyecto_producto' proyecto_id=proyecto.id %}" method="post" id="quickProductoForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="modal_producto">Producto <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="modal_producto" name="producto" required placeholder="Ej: Aplicación móvil">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_tipo">Tipo de Producto <span class="text-danger">*</span></label>
+                        <select class="form-control" id="modal_tipo" name="tipo" required>
+                            <option value="" selected>Seleccione tipo de producto</option>
+                            <option value="Software">Software</option>
+                            <option value="Hardware">Hardware</option>
+                            <option value="Documento">Documento</option>
+                            <option value="Servicio">Servicio</option>
+                            <option value="Capacitación">Capacitación</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_cantidad">Cantidad <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="modal_cantidad" name="cantidad" required min="1" placeholder="Ej: 1">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Configuración para los formularios rápidos
+        const quickForms = [
+            document.getElementById('quickRolForm'),
+            document.getElementById('quickAliadoForm'),
+            document.getElementById('quickProductoForm')
+        ];
+        
+        // Agregar validación y comportamiento a cada formulario rápido
+        quickForms.forEach(form => {
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    // Validar campos requeridos
+                    const requiredFields = form.querySelectorAll('[required]');
+                    let isValid = true;
+                    
+                    requiredFields.forEach(field => {
+                        if (!field.value.trim()) {
+                            isValid = false;
+                            field.classList.add('is-invalid');
+                        } else {
+                            field.classList.remove('is-invalid');
+                        }
+                    });
+                    
+                    if (!isValid) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    
+                    // Mostrar modal de carga
+                    showLoadingModal();
+                    
+                    // Cerrar el modal actual
+                    const modalElement = form.closest('.modal');
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) {
+                        modal.hide();
+                    } else {
+                        $(modalElement).modal('hide');
+                    }
+                    
+                    return true;
+                });
+            }
+        });
+    });
+</script>
 {% endblock %} 

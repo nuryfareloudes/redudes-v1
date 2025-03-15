@@ -1,0 +1,128 @@
+{% extends 'core/base.html' %}
+
+{% block title %}
+    {% if form.instance.id %}
+        Editar Producto | {{ proyecto.nombre }}
+    {% else %}
+        Agregar Producto | {{ proyecto.nombre }}
+    {% endif %} | REDUDES
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+            <h2 class="mb-0">
+                {% if form.instance.id %}
+                    Editar Producto
+                {% else %}
+                    Agregar Producto
+                {% endif %}
+            </h2>
+            <div>
+                <span class="badge bg-light text-dark">{{ proyecto.nombre }}</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="post" id="productoForm" class="show-loading" data-validate="id_producto,id_tipo,id_cantidad">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="id_producto" class="form-label">Producto <span class="text-danger">*</span></label>
+                    <input type="text" name="producto" id="id_producto" class="form-control {% if form.producto.errors %}is-invalid{% endif %}" value="{{ form.producto.value|default:'' }}" required placeholder="Ej: Aplicación móvil">
+                    {% if form.producto.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.producto.errors }}
+                        </div>
+                    {% endif %}
+                    <div id="id_producto-error" class="invalid-feedback" style="display: none;">
+                        Este campo es obligatorio.
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="id_tipo" class="form-label">Tipo de Producto <span class="text-danger">*</span></label>
+                    <select class="form-select {% if form.tipo.errors %}is-invalid{% endif %}" id="id_tipo" name="tipo" required>
+                        <option value="" {% if not form.tipo.value %}selected{% endif %}>Seleccione tipo de producto</option>
+                        <option value="Software" {% if form.tipo.value == "Software" %}selected{% endif %}>Software</option>
+                        <option value="Hardware" {% if form.tipo.value == "Hardware" %}selected{% endif %}>Hardware</option>
+                        <option value="Documento" {% if form.tipo.value == "Documento" %}selected{% endif %}>Documento</option>
+                        <option value="Servicio" {% if form.tipo.value == "Servicio" %}selected{% endif %}>Servicio</option>
+                        <option value="Capacitación" {% if form.tipo.value == "Capacitación" %}selected{% endif %}>Capacitación</option>
+                        <option value="Otro" {% if form.tipo.value == "Otro" %}selected{% endif %}>Otro</option>
+                    </select>
+                    {% if form.tipo.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.tipo.errors }}
+                        </div>
+                    {% endif %}
+                    <div id="id_tipo-error" class="invalid-feedback" style="display: none;">
+                        Este campo es obligatorio.
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="id_cantidad" class="form-label">Cantidad <span class="text-danger">*</span></label>
+                    <input type="number" name="cantidad" id="id_cantidad" class="form-control {% if form.cantidad.errors %}is-invalid{% endif %}" value="{{ form.cantidad.value|default:'' }}" required min="1" placeholder="Ej: 1">
+                    {% if form.cantidad.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.cantidad.errors }}
+                        </div>
+                    {% endif %}
+                    <div id="id_cantidad-error" class="invalid-feedback" style="display: none;">
+                        Este campo es obligatorio.
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-end mt-4">
+                    <a href="{% url 'proyecto_detail' pk=proyecto.id %}" class="btn btn-secondary me-2">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('productoForm');
+        
+        form.addEventListener('submit', function(e) {
+            const productoInput = document.getElementById('id_producto');
+            const tipoSelect = document.getElementById('id_tipo');
+            const cantidadInput = document.getElementById('id_cantidad');
+            
+            if (!productoInput.value.trim()) {
+                e.preventDefault();
+                alert('Por favor, ingrese un producto.');
+                productoInput.focus();
+                return false;
+            }
+            
+            if (!tipoSelect.value) {
+                e.preventDefault();
+                alert('Por favor, seleccione un tipo de producto.');
+                tipoSelect.focus();
+                return false;
+            }
+            
+            if (!cantidadInput.value || cantidadInput.value < 1) {
+                e.preventDefault();
+                alert('Por favor, ingrese una cantidad válida (mínimo 1).');
+                cantidadInput.focus();
+                return false;
+            }
+            
+            // Mostrar modal de carga
+            showLoadingModal();
+            return true;
+        });
+    });
+</script>
+{% endblock %} 
