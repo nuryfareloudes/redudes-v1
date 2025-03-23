@@ -57,6 +57,10 @@ urlpatterns = [
     path('proyectos/<int:proyecto_id>/productos/agregar/', views.add_proyecto_producto, name='add_proyecto_producto'),
     path('proyectos/productos/<int:pk>/eliminar-rapido/', views.delete_proyecto_producto, name='delete_proyecto_producto'),
     
+    # URLs para recomendaciones
+    path('proyectos/<int:proyecto_id>/recomendaciones/generar/', views.generar_recomendaciones, name='generar_recomendaciones'),
+    path('recomendaciones/<int:recomendacion_id>/', views.RecomendacionDetailView.as_view(), name='ver_recomendaciones'),
+    
     # Autenticación
     path('login/', auth_views.LoginView.as_view(template_name='core/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login', template_name='core/logout.html'), name='logout'),

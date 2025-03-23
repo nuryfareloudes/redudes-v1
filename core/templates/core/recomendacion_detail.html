@@ -1,0 +1,201 @@
+{% extends 'core/base.html' %}
+{% load custom_filters %}
+
+{% block title %}Recomendaciones para {{ recomendacion.project_id.nombre }} | REDUDES{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Recomendaciones de Perfiles</h4>
+                    <span class="badge bg-light text-dark">{{ recomendacion.fecha_recomendacion|date:"d/m/Y H:i" }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h2 class="text-primary">{{ recomendacion.project_id.nombre }}</h2>
+                            <p class="text-muted">Resultados del análisis de perfiles para el proyecto</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Métricas de los modelos -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0">Métricas Random Forest</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <tr>
+                                                <th>Accuracy:</th>
+                                                <td>{{ recomendacion.rf_accuracy|floatformat:4 }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Precision:</th>
+                                                <td>{{ recomendacion.rf_precision|floatformat:4 }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Recall:</th>
+                                                <td>{{ recomendacion.rf_recall|floatformat:4 }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>F1-Score:</th>
+                                                <td>{{ recomendacion.rf_f1|floatformat:4 }}</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0">Métricas KNN</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <tr>
+                                                <th>Accuracy:</th>
+                                                <td>{{ recomendacion.knn_accuracy|floatformat:4 }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Precision:</th>
+                                                <td>{{ recomendacion.knn_precision|floatformat:4 }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Recall:</th>
+                                                <td>{{ recomendacion.knn_recall|floatformat:4 }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>F1-Score:</th>
+                                                <td>{{ recomendacion.knn_f1|floatformat:4 }}</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Lista de usuarios recomendados -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Perfiles Recomendados</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if usuarios_recomendados %}
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Usuario</th>
+                                                    <th>Score Combinado</th>
+                                                    <th>Score RF</th>
+                                                    <th>Score KNN</th>
+                                                    <th>Confianza</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for recomendacion_usuario in usuarios_recomendados %}
+                                                <tr>
+                                                    <td>{{ recomendacion_usuario.ranking }}</td>
+                                                    <td>{{ recomendacion_usuario.user_id.nombres }} {{ recomendacion_usuario.user_id.apellidos }}</td>
+                                                    <td>
+                                                        <div class="progress">
+                                                            <div class="progress-bar {% if recomendacion_usuario.score_combinado > 0.7 %}bg-success{% elif recomendacion_usuario.score_combinado > 0.5 %}bg-info{% else %}bg-warning{% endif %}" 
+                                                                 role="progressbar" 
+                                                                 style="width: {{ recomendacion_usuario.score_combinado|floatformat:2|multiply:100 }}%"
+                                                                 aria-valuenow="{{ recomendacion_usuario.score_combinado|floatformat:2|multiply:100 }}" 
+                                                                 aria-valuemin="0" aria-valuemax="100">
+                                                                {{ recomendacion_usuario.score_combinado|floatformat:2|multiply:100 }}%
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="progress">
+                                                            <div class="progress-bar bg-primary" role="progressbar" 
+                                                                 style="width: {{ recomendacion_usuario.score_rf|floatformat:2|multiply:100 }}%"
+                                                                 aria-valuenow="{{ recomendacion_usuario.score_rf|floatformat:2|multiply:100 }}" 
+                                                                 aria-valuemin="0" aria-valuemax="100">
+                                                                {{ recomendacion_usuario.score_rf|floatformat:2|multiply:100 }}%
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="progress">
+                                                            <div class="progress-bar bg-info" role="progressbar" 
+                                                                 style="width: {{ recomendacion_usuario.score_knn|floatformat:2|multiply:100 }}%"
+                                                                 aria-valuenow="{{ recomendacion_usuario.score_knn|floatformat:2|multiply:100 }}" 
+                                                                 aria-valuemin="0" aria-valuemax="100">
+                                                                {{ recomendacion_usuario.score_knn|floatformat:2|multiply:100 }}%
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge {% if recomendacion_usuario.score_combinado > 0.7 %}bg-success{% elif recomendacion_usuario.score_combinado > 0.5 %}bg-info{% else %}bg-warning{% endif %}">
+                                                            {% if recomendacion_usuario.score_combinado > 0.7 %}
+                                                                Alta
+                                                            {% elif recomendacion_usuario.score_combinado > 0.5 %}
+                                                                Media
+                                                            {% else %}
+                                                                Baja
+                                                            {% endif %}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="btn-group">
+                                                            <a href="{% url 'usuario_detail' pk=recomendacion_usuario.user_id.id %}" 
+                                                               class="btn btn-sm btn-info">
+                                                                <i class="fas fa-user"></i> Ver Perfil
+                                                            </a>
+                                                            <button type="button" class="btn btn-sm btn-secondary" 
+                                                                    data-toggle="tooltip" data-placement="top" 
+                                                                    title="Match con requisitos del rol">
+                                                                <i class="fas fa-info-circle"></i>
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <div class="alert alert-info">
+                                        No se encontraron recomendaciones para este proyecto.
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'proyecto_detail' pk=recomendacion.project_id.id %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver al Proyecto
+                        </a>
+                        <a href="{% url 'generar_recomendaciones' proyecto_id=recomendacion.project_id.id %}" class="btn btn-primary">
+                            <i class="fas fa-sync"></i> Generar Nuevas Recomendaciones
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Agregar cualquier JavaScript adicional necesario aquí
+</script>
+{% endblock %} 

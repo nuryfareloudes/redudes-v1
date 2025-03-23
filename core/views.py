@@ -9,12 +9,14 @@ from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from .models import (
     Proyecto, ProyectoRoles, ProyectoAliados, ProyectoProductos,
-    Usuario, UsuarioHabilidades, UsuarioConocimiento, UsuarioEstudios, UsuarioExperiencia
+    Usuario, UsuarioHabilidades, UsuarioConocimiento, UsuarioEstudios, UsuarioExperiencia,
+    RecomendacionProyecto, RecomendacionUsuario
 )
 from .data_services import process_user_data
 from django import forms
 import logging
 import datetime
+from .ml_models import RecommendationSystem
 
 logger = logging.getLogger(__name__)
 
@@ -1232,3 +1234,74 @@ def delete_proyecto_producto(request, pk):
         proyecto_id = request.GET.get('proyecto_id')
     
     return redirect('proyecto_detail', pk=proyecto_id)
+
+@login_required
+def generar_recomendaciones(request, proyecto_id):
+    """
+    Vista para generar recomendaciones de usuarios para un proyecto
+    """
+    try:
+        # Obtener el proyecto
+        proyecto = get_object_or_404(Proyecto, id=proyecto_id)
+        
+        # Obtener todos los usuarios
+        usuarios = Usuario.objects.all()
+        
+        # Obtener roles del proyecto
+        roles_proyecto = ProyectoRoles.objects.filter(project_id=proyecto)
+        
+        # Inicializar sistema de recomendación
+        recommender = RecommendationSystem()
+        
+        # Preparar datos
+        X, user_ids = recommender.prepare_data(usuarios, roles_proyecto)
+        
+        # Entrenar modelos y obtener métricas
+        rf_scores, knn_scores = recommender.train_models(X, user_ids)
+        
+        # Obtener recomendaciones
+        recommendations = recommender.get_recommendations(X, user_ids)
+        
+        # Guardar resultados en la base de datos
+        recomendacion = RecomendacionProyecto.objects.create(
+            project_id=proyecto,
+            rf_accuracy=rf_scores['accuracy'],
+            rf_precision=rf_scores['precision'],
+            rf_recall=rf_scores['recall'],
+            rf_f1=rf_scores['f1'],
+            knn_accuracy=knn_scores['accuracy'],
+            knn_precision=knn_scores['precision'],
+            knn_recall=knn_scores['recall'],
+            knn_f1=knn_scores['f1']
+        )
+        
+        # Guardar recomendaciones de usuarios
+        for idx, rec in enumerate(recommendations, 1):
+            usuario = Usuario.objects.get(id=rec['user_id'])
+            RecomendacionUsuario.objects.create(
+                recomendacion_id=recomendacion,
+                user_id=usuario,
+                score_combinado=rec['score'],
+                score_rf=rec['rf_score'],
+                score_knn=rec['knn_score'],
+                ranking=idx
+            )
+        
+        messages.success(request, "Recomendaciones generadas exitosamente.")
+        return redirect('ver_recomendaciones', recomendacion_id=recomendacion.id)
+    
+    except Exception as e:
+        logger.error(f"Error generando recomendaciones: {str(e)}")
+        messages.error(request, f"Error generando recomendaciones: {str(e)}")
+        return redirect('proyecto_detail', pk=proyecto_id)
+
+class RecomendacionDetailView(LoginRequiredMixin, DetailView):
+    model = RecomendacionProyecto
+    template_name = 'core/recomendacion_detail.html'
+    context_object_name = 'recomendacion'
+    pk_url_kwarg = 'recomendacion_id'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['usuarios_recomendados'] = self.object.usuarios_recomendados.all()
+        return context

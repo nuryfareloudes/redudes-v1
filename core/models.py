@@ -84,3 +84,50 @@ class CustomUser(AbstractUser):
     is_admin = models.BooleanField(default=False)
     is_evaluator = models.BooleanField(default=False)
     is_researcher = models.BooleanField(default=False)
+
+class RecomendacionProyecto(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    project_id = models.ForeignKey(Proyecto, on_delete=models.CASCADE)
+    fecha_recomendacion = models.DateTimeField(auto_now_add=True)
+    rf_accuracy = models.FloatField()
+    rf_precision = models.FloatField()
+    rf_recall = models.FloatField()
+    rf_f1 = models.FloatField()
+    knn_accuracy = models.FloatField()
+    knn_precision = models.FloatField()
+    knn_recall = models.FloatField()
+    knn_f1 = models.FloatField()
+
+    def __str__(self):
+        return f"Recomendación para {self.project_id.nombre} - {self.fecha_recomendacion}"
+
+class RecomendacionUsuario(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    recomendacion_id = models.ForeignKey(RecomendacionProyecto, on_delete=models.CASCADE, related_name='usuarios_recomendados')
+    user_id = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    score_combinado = models.FloatField()
+    score_rf = models.FloatField()
+    score_knn = models.FloatField()
+    ranking = models.IntegerField()
+    nivel_confianza = models.CharField(max_length=50, default='Media')  # Alta, Media, Baja
+    match_habilidades = models.FloatField(default=0.0)
+    match_conocimientos = models.FloatField(default=0.0)
+    match_experiencia = models.FloatField(default=0.0)
+    match_educacion = models.FloatField(default=0.0)
+
+    class Meta:
+        ordering = ['-score_combinado']
+
+    def __str__(self):
+        return f"Recomendación: {self.user_id.nombres} {self.user_id.apellidos} - Score: {self.score_combinado}"
+
+    def get_nivel_confianza(self):
+        if self.score_combinado > 0.7:
+            return 'Alta'
+        elif self.score_combinado > 0.5:
+            return 'Media'
+        return 'Baja'
+
+    def save(self, *args, **kwargs):
+        self.nivel_confianza = self.get_nivel_confianza()
+        super().save(*args, **kwargs)
