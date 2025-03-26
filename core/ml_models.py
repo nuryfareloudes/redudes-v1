@@ -94,8 +94,8 @@ class RecommendationSystem:
                 # Calcular relevancia de experiencia
                 experiencia_relevante = 0
                 for exp in experiencias:
-                    if any(h in exp.descripcion.lower() for h in roles_habilidades) or \
-                       any(c in exp.descripcion.lower() for c in roles_conocimientos):
+                    if any(h in exp.actividades.lower() for h in roles_habilidades) or \
+                       any(c in exp.actividades.lower() for c in roles_conocimientos):
                         experiencia_relevante += exp.tiempo
                 
                 # Crear vector de características
@@ -210,7 +210,30 @@ class RecommendationSystem:
                 self.rf_weight = rf_performance / total_performance
                 self.knn_weight = knn_performance / total_performance
             
-            return rf_scores, knn_scores
+            # Calcular métricas finales usando todos los datos
+            self.rf_model.fit(X, y)
+            self.knn_model.fit(X, y)
+            
+            # Obtener probabilidades para todos los datos
+            rf_probs = self.rf_model.predict_proba(X)
+            knn_probs = self.knn_model.predict_proba(X)
+            
+            # Calcular métricas finales
+            rf_final_scores = {
+                'accuracy': np.mean(rf_probs.max(axis=1)),
+                'precision': np.mean(rf_probs.max(axis=1)),
+                'recall': np.mean(rf_probs.max(axis=1)),
+                'f1': np.mean(rf_probs.max(axis=1))
+            }
+            
+            knn_final_scores = {
+                'accuracy': np.mean(knn_probs.max(axis=1)),
+                'precision': np.mean(knn_probs.max(axis=1)),
+                'recall': np.mean(knn_probs.max(axis=1)),
+                'f1': np.mean(knn_probs.max(axis=1))
+            }
+            
+            return rf_final_scores, knn_final_scores
             
         except Exception as e:
             logger.error(f"Error entrenando modelos: {str(e)}")
