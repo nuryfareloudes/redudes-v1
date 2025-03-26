@@ -1,71 +1,57 @@
-# REDUDES - Sistema de Información
+# REDUDES - Sistema Red de Usuarios UDES
 
-Sistema de información para la Red de Universidades para el Desarrollo Sostenible.
+REDUDES es una plataforma avanzada para la gestión y recomendación de perfiles profesionales para proyectos de investigación y desarrollo.
 
-## Requisitos
+## Descripción General
 
-- Python 3.8+
-- Navegador web moderno
+REDUDES es un sistema diseñado para facilitar la identificación y asignación de perfiles profesionales a proyectos específicos. Utiliza algoritmos de inteligencia artificial (Random Forest y KNN) para recomendar los candidatos más adecuados según las necesidades y requisitos de cada proyecto.
 
-## Instalación
+## Funcionalidades Principales
 
-1. Clonar el repositorio:
-   ```
-   git clone <url-del-repositorio>
-   cd redudesv2
-   ```
+### Gestión de Proyectos
+- Registro detallado de proyectos con información sobre convocatorias, objetivos y alcance
+- Definición de roles requeridos con habilidades y conocimientos específicos
+- Gestión de aliados estratégicos y productos esperados
+- Dashboard visual con métricas e indicadores clave
 
-2. Crear un entorno virtual e instalar dependencias:
-   ```
-   python -m venv venv
-   venv\Scripts\activate  # En Windows
-   source venv/bin/activate  # En Linux/Mac
-   pip install -r requirements.txt
-   ```
+### Gestión de Perfiles Profesionales
+- Registro completo de usuarios con sus habilidades, conocimientos, estudios y experiencia laboral
+- Importación automática de perfiles desde plataformas como CVLAC y LinkedIn
+- Visualización detallada del historial profesional y académico
+- Evaluación de competencias técnicas y habilidades blandas
 
-3. Aplicar migraciones:
-   ```
-   python manage.py migrate
-   ```
+### Sistema de Recomendación Inteligente
+- Algoritmos de machine learning para la identificación de candidatos óptimos
+- Análisis de compatibilidad entre perfiles profesionales y requisitos de proyectos
+- Métricas de confianza para cada recomendación
+- Ranking de candidatos según su idoneidad para cada rol
 
-4. Crear un superusuario:
-   ```
-   python manage.py createsuperuser
-   ```
+### Analítica de Datos
+- Visualización de métricas de rendimiento de los algoritmos de recomendación
+- Análisis de brechas de habilidades y conocimientos
+- Estadísticas sobre perfiles disponibles y necesidades de proyectos
+- Reportes dinámicos para toma de decisiones
 
-## Ejecución
+## Casos de Uso
 
-1. Iniciar el servidor Django:
-   ```
-   python manage.py runserver
-   ```
+REDUDES es ideal para:
 
-2. Acceder a la aplicación en el navegador:
-   ```
-   http://localhost:8000
-   ```
+- **Instituciones educativas**: Asignación óptima de investigadores a proyectos de investigación
+- **Centros de innovación**: Conformación de equipos multidisciplinarios para proyectos de desarrollo
+- **Departamentos de I+D**: Identificación de talento interno para nuevas iniciativas
+- **Oficinas de transferencia tecnológica**: Vinculación de expertos con proyectos de innovación
+- **Redes de colaboración científica**: Formación de equipos interinstitucionales
 
-## Funcionalidades
+## Tecnologías Utilizadas
 
-- **Gestión de Proyectos**: Crear, editar y eliminar proyectos.
-- **Gestión de Usuarios**: Administrar usuarios con sus habilidades, conocimientos, estudios y experiencia.
-- **Extracción de Datos**: Extraer automáticamente información de perfiles de CVLAC y LinkedIn.
-
-## Estructura del Proyecto
-
-- `core/`: Aplicación principal
-  - `models.py`: Definición de modelos de datos
-  - `views.py`: Vistas y lógica de la aplicación
-  - `urls.py`: Configuración de URLs
-  - `templates/`: Plantillas HTML
-  - `scraping_utils.py`: Utilidades para extracción de datos
-  - `data_services.py`: Servicios para procesamiento de datos
-
-- `redudes/`: Configuración del proyecto
-  - `settings.py`: Configuración de Django
+- **Backend**: Django (Python)
+- **Frontend**: Bootstrap, JavaScript
+- **Base de datos**: SQLite (desarrollo), PostgreSQL (producción)
+- **Machine Learning**: Scikit-learn, Pandas, NumPy
+- **Extracción de datos**: Beautiful Soup, Selenium
 
 ## Notas
 
-- La extracción de datos de LinkedIn puede requerir autenticación debido a las restricciones de LinkedIn.
+- La extracción de datos de LinkedIn puede requerir autenticación debido a las restricciones de la plataforma.
 - Se recomienda usar URLs públicas de CVLAC para obtener mejores resultados.
 - Los logs de depuración se almacenan en el directorio `debug_logs/`. 
