@@ -100,7 +100,7 @@
                             
                             <div class="form-group mb-3">
                                 <label for="id_cargo_actual" class="form-label">Cargo Actual <span class="text-danger">*</span></label>
-                                <input type="text" name="cargo_actual" id="id_cargo_actual" class="form-control {% if form.cargo_actual.errors %}is-invalid{% endif %}" value="{{ form.cargo_actual.value|default:'' }}" required placeholder="Ingrese cargo actual">
+                                <input type="text" name="puesto_actual" id="id_cargo_actual" class="form-control {% if form.cargo_actual.errors %}is-invalid{% endif %}" value="{{ form.cargo_actual.value|default:'' }}" required placeholder="Ingrese cargo actual">
                                 {% if form.cargo_actual.errors %}
                                     <div class="invalid-feedback">
                                         {{ form.cargo_actual.errors }}
@@ -125,8 +125,8 @@
                             </div>
                             
                             <div class="form-group mb-3">
-                                <label for="id_fecha_ingreso" class="form-label">Fecha de Ingreso</label>
-                                <input type="date" name="fecha_ingreso" id="id_fecha_ingreso" class="form-control {% if form.fecha_ingreso.errors %}is-invalid{% endif %}" value="{{ form.fecha_ingreso.value|date:'Y-m-d'|default:'' }}">
+                                <label for="id_fecha_ingreso" class="form-label">Fecha de Ingreso*</label>
+                                <input type="date" name="fecha_ingreso" id="id_fecha_ingreso" class="form-control {% if form.fecha_ingreso.errors %}is-invalid{% endif %}" value="{{ form.fecha_ingreso.value|date:'Y-m-d'|default:'' }}" required>
                                 {% if form.fecha_ingreso.errors %}
                                     <div class="invalid-feedback">
                                         {{ form.fecha_ingreso.errors }}
@@ -137,21 +137,13 @@
                             <div class="form-group mb-3">
                                 <label for="id_url_cvlac" class="form-label">URL CVLAC</label>
                                 <input type="url" name="url_cvlac" id="id_url_cvlac" class="form-control {% if form.url_cvlac.errors %}is-invalid{% endif %}" value="{{ form.url_cvlac.value|default:'' }}" placeholder="https://scienti.minciencias.gov.co/cvlac/...">
-                                {% if form.url_cvlac.errors %}
-                                    <div class="invalid-feedback">
-                                        {{ form.url_cvlac.errors }}
-                                    </div>
-                                {% endif %}
+                               
                             </div>
                             
                             <div class="form-group mb-3">
                                 <label for="id_url_linkedin" class="form-label">URL LinkedIn</label>
                                 <input type="url" name="url_linkedin" id="id_url_linkedin" class="form-control {% if form.url_linkedin.errors %}is-invalid{% endif %}" value="{{ form.url_linkedin.value|default:'' }}" placeholder="https://www.linkedin.com/in/...">
-                                {% if form.url_linkedin.errors %}
-                                    <div class="invalid-feedback">
-                                        {{ form.url_linkedin.errors }}
-                                    </div>
-                                {% endif %}
+                                
                             </div>
                         </div>
                     </div>

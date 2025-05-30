@@ -1,0 +1,9 @@
+{
+    "habilidades_added": 0,
+    "conocimientos_added": 0,
+    "estudios_added": 0,
+    "experiencia_added": 0,
+    "errors": [
+        "Error al guardar experiencia No disponible: Field 'tiempo' expected a number but got 'No disponible'."
+    ]
+}

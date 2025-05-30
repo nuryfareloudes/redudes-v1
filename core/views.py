@@ -95,10 +95,37 @@ class UsuarioDetailView(LoginRequiredMixin, DetailView):
     template_name = 'core/usuario_detail.html'
     context_object_name = 'usuario'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        usuario = self.get_object()
+        context['habilidad_formset'] = HabilidadFormSet(instance=usuario, prefix='habilidades')
+        context['conocimiento_formset'] = ConocimientoFormSet(instance=usuario, prefix='conocimientos')
+        context['estudio_formset'] = EstudioFormSet(instance=usuario, prefix='estudios')
+        context['experiencia_formset'] = ExperienciaFormSet(instance=usuario, prefix='experiencias')
+        return context
+
+    def post(self, request, *args, **kwargs):
+        usuario = self.get_object()
+        habilidad_formset = HabilidadFormSet(request.POST, instance=usuario, prefix='habilidades')
+        conocimiento_formset = ConocimientoFormSet(request.POST, instance=usuario, prefix='conocimientos')
+        estudio_formset = EstudioFormSet(request.POST, instance=usuario, prefix='estudios')
+        experiencia_formset = ExperienciaFormSet(request.POST, instance=usuario, prefix='experiencias')
+
+        if habilidad_formset.is_valid():
+            habilidad_formset.save()
+        if conocimiento_formset.is_valid():
+            conocimiento_formset.save()
+        if estudio_formset.is_valid():
+            estudio_formset.save()
+        if experiencia_formset.is_valid():
+            experiencia_formset.save()
+
+        return redirect('usuario_detail', pk=usuario.pk)
+
 class UsuarioCreateView(LoginRequiredMixin, CreateView):
     model = Usuario
     template_name = 'core/usuario_form.html'
-    fields = ['nombres', 'apellidos', 'email', 'telefono', 'cargo_actual', 
+    fields = ['nombres', 'apellidos', 'email', 'telefono', 'puesto_actual', 
               'dependencia', 'url_cvlac', 'url_linkedin', 'fecha_ingreso']
     success_url = reverse_lazy('usuario_list')
     
@@ -126,8 +153,7 @@ class UsuarioCreateView(LoginRequiredMixin, CreateView):
 class UsuarioUpdateView(LoginRequiredMixin, UpdateView):
     model = Usuario
     template_name = 'core/usuario_form.html'
-    fields = ['nombres', 'apellidos', 'email', 'telefono', 'cargo_actual', 
-              'dependencia', 'url_cvlac', 'url_linkedin', 'fecha_ingreso']
+    fields = ['nombres', 'apellidos', 'email', 'telefono', 'puesto_actual', 'dependencia', 'url_cvlac', 'url_linkedin', 'fecha_ingreso']
     
     def get_success_url(self):
         return reverse_lazy('usuario_detail', kwargs={'pk': self.object.pk})
@@ -1338,7 +1364,7 @@ def crear_usuario(request):
             experiencia_formset.save()
 
             messages.success(request, 'Usuario creado exitosamente.')
-            return redirect('detalle_usuario', pk=usuario.pk)
+            return redirect('usuario_detail', pk=usuario.pk)
     else:
         form = UsuarioForm()
         habilidad_formset = HabilidadFormSet(prefix='habilidades')
