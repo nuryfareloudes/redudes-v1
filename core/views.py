@@ -1287,7 +1287,7 @@ def generar_recomendaciones(request, proyecto_id):
         X, user_ids = recommender.prepare_data(usuarios, roles_proyecto)
         
         # Entrenar modelos y obtener métricas
-        rf_scores, knn_scores = recommender.train_models(X, user_ids)
+        rf_scores, knn_scores, nn_scores = recommender.train_models(X, user_ids)
         
         # Obtener recomendaciones
         recommendations = recommender.get_recommendations(X, user_ids)

@@ -2,20 +2,20 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import logging
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.neural_network import MLPRegressor
-import sqlite3
 import warnings
-from django.conf import settings
-import os
+
+# Suprimir advertencias específicas de métricas
+warnings.filterwarnings('ignore', category=UserWarning, message='.*Precision is ill-defined.*')
+warnings.filterwarnings('ignore', category=UserWarning, message='.*F-score is ill-defined.*')
+warnings.filterwarnings('ignore', category=UserWarning, message='.*Recall is ill-defined.*')
 
 logger = logging.getLogger(__name__)
+
 
 class RecommendationSystem:
     def __init__(self):
@@ -27,20 +27,38 @@ class RecommendationSystem:
             min_samples_leaf=2,
             random_state=42
         )
-        
+
         # Configurar KNN con más parámetros
         self.knn_model = KNeighborsClassifier(
             n_neighbors=5,
             weights='distance',
             metric='euclidean'
         )
-        
+
+        # Configurar Red Neuronal con MLPClassifier
+        self.nn_model = MLPClassifier(
+            hidden_layer_sizes=(64, 32, 16),
+            activation='relu',
+            solver='adam',
+            alpha=0.001,
+            learning_rate='adaptive',
+            max_iter=500,
+            early_stopping=True,
+            validation_fraction=0.2,
+            n_iter_no_change=10,
+            random_state=42
+        )
+
         self.scaler = StandardScaler()
-        
-        # Pesos iniciales para la combinación de modelos
-        self.rf_weight = 0.6
-        self.knn_weight = 0.4
-        
+
+        # Pesos iniciales para la combinación de modelos (ahora para 3 modelos)
+        self.rf_weight = 0.33
+        self.knn_weight = 0.33
+        self.nn_weight = 0.34
+
+        # Flags para rastrear si los modelos están entrenados
+        self.models_trained = False
+
     def prepare_data(self, usuarios, roles_proyecto):
         """
         Prepara los datos para el entrenamiento del modelo.
@@ -48,65 +66,104 @@ class RecommendationSystem:
         try:
             # Crear features para usuarios
             usuarios_features = []
-            
+
             # Obtener todas las habilidades y conocimientos requeridos por los roles
             roles_habilidades = set()
             roles_conocimientos = set()
             roles_experiencia_min = 0
-            
+
             for rol in roles_proyecto:
-                roles_habilidades.update(set(rol.habilidades.lower().split(',')))
-                roles_conocimientos.update(set(rol.conocimientos.lower().split(',')))
-                try:
-                    exp_str = rol.experiencia.lower()
-                    if 'años' in exp_str:
-                        años = [int(s) for s in exp_str.split() if s.isdigit()]
-                        if años:
-                            roles_experiencia_min = max(roles_experiencia_min, max(años))
-                except:
-                    pass
-            
+                if hasattr(rol, 'habilidades') and rol.habilidades:
+                    roles_habilidades.update(set(rol.habilidades.lower().split(',')))
+                if hasattr(rol, 'conocimientos') and rol.conocimientos:
+                    roles_conocimientos.update(set(rol.conocimientos.lower().split(',')))
+                if hasattr(rol, 'experiencia') and rol.experiencia:
+                    try:
+                        exp_str = rol.experiencia.lower()
+                        if 'años' in exp_str:
+                            años = [int(s) for s in exp_str.split() if s.isdigit()]
+                            if años:
+                                roles_experiencia_min = max(roles_experiencia_min, max(años))
+                    except:
+                        pass
+
             roles_habilidades = {h.strip() for h in roles_habilidades if h.strip()}
             roles_conocimientos = {c.strip() for c in roles_conocimientos if c.strip()}
-            
+
             for usuario in usuarios:
-                # Obtener habilidades, conocimientos y experiencia
-                habilidades = list(usuario.habilidades.all())
-                conocimientos = list(usuario.conocimientos.all())
-                experiencias = list(usuario.experiencias.all())
-                estudios = list(usuario.estudios.all())
-                
+                # Obtener habilidades, conocimientos y experiencia con manejo de errores
+                try:
+                    habilidades = list(usuario.habilidades.all()) if hasattr(usuario, 'habilidades') else []
+                    conocimientos = list(usuario.conocimientos.all()) if hasattr(usuario, 'conocimientos') else []
+                    experiencias = list(usuario.experiencias.all()) if hasattr(usuario, 'experiencias') else []
+                    estudios = list(usuario.estudios.all()) if hasattr(usuario, 'estudios') else []
+                except:
+                    habilidades = conocimientos = experiencias = estudios = []
+
                 # Calcular match de habilidades con peso
-                habilidades_usuario = {h.habilidad.lower() for h in habilidades}
-                match_habilidades = len(habilidades_usuario.intersection(roles_habilidades)) / len(roles_habilidades) if roles_habilidades else 0
-                
+                habilidades_usuario = set()
+                if habilidades:
+                    for h in habilidades:
+                        if hasattr(h, 'habilidad'):
+                            habilidades_usuario.add(h.habilidad.lower())
+
+                match_habilidades = len(habilidades_usuario.intersection(roles_habilidades)) / len(
+                    roles_habilidades) if roles_habilidades else 0
+
                 # Calcular match de conocimientos con peso
-                conocimientos_usuario = {c.conocimiento.lower() for c in conocimientos}
-                match_conocimientos = len(conocimientos_usuario.intersection(roles_conocimientos)) / len(roles_conocimientos) if roles_conocimientos else 0
-                
+                conocimientos_usuario = set()
+                if conocimientos:
+                    for c in conocimientos:
+                        if hasattr(c, 'conocimiento'):
+                            conocimientos_usuario.add(c.conocimiento.lower())
+
+                match_conocimientos = len(conocimientos_usuario.intersection(roles_conocimientos)) / len(
+                    roles_conocimientos) if roles_conocimientos else 0
+
                 # Calcular nivel promedio de conocimientos relevantes
                 niveles_conocimientos = []
                 for c in conocimientos:
-                    if c.conocimiento.lower() in roles_conocimientos:
-                        niveles_conocimientos.append(c.nivel)
-                
+                    if hasattr(c, 'conocimiento') and hasattr(c, 'nivel'):
+                        if c.conocimiento.lower() in roles_conocimientos:
+                            niveles_conocimientos.append(c.nivel)
+
                 promedio_nivel_conocimientos = np.mean(niveles_conocimientos) if niveles_conocimientos else 0
-                
+
                 # Calcular años máximos de experiencia relevante
-                max_tiempo_experiencia = max([e.tiempo for e in experiencias]) if experiencias else 0
+                max_tiempo_experiencia = 0
+                if experiencias:
+                    for e in experiencias:
+                        if hasattr(e, 'tiempo'):
+                            max_tiempo_experiencia = max(max_tiempo_experiencia, e.tiempo)
+
                 cumple_experiencia = 1 if max_tiempo_experiencia >= roles_experiencia_min else 0
-                
+
                 # Calcular nivel educativo máximo
-                nivel_educativo = max([e.nivel for e in estudios]) if estudios else 0
-                
+                nivel_educativo = 0
+                if estudios:
+                    for e in estudios:
+                        if hasattr(e, 'nivel'):
+                            nivel_educativo = max(nivel_educativo, e.nivel)
+
                 # Calcular relevancia de experiencia
                 experiencia_relevante = 0
                 for exp in experiencias:
-                    if any(h in exp.actividades.lower() for h in roles_habilidades) or \
-                       any(c in exp.actividades.lower() for c in roles_conocimientos):
-                        experiencia_relevante += exp.tiempo
-                
-                # Crear vector de características
+                    if hasattr(exp, 'actividades') and hasattr(exp, 'tiempo'):
+                        actividades_lower = exp.actividades.lower()
+                        if any(h in actividades_lower for h in roles_habilidades) or \
+                                any(c in actividades_lower for c in roles_conocimientos):
+                            experiencia_relevante += exp.tiempo
+
+                # Nuevas características mejoradas
+                diversidad_habilidades = len(
+                    set(getattr(h, 'categoria', 'general') for h in habilidades)) if habilidades else 0
+                tiempos_experiencia = [e.tiempo for e in experiencias if hasattr(e, 'tiempo')]
+                consistencia_experiencia = np.std(tiempos_experiencia) if len(tiempos_experiencia) > 1 else 0
+
+                niveles_habilidades = [getattr(h, 'nivel', 3) for h in habilidades if hasattr(h, 'nivel')]
+                promedio_nivel_habilidades = np.mean(niveles_habilidades) if niveles_habilidades else 0
+
+                # Crear vector de características expandido
                 feature_vector = {
                     'user_id': usuario.id,
                     'num_habilidades': len(habilidades),
@@ -119,596 +176,400 @@ class RecommendationSystem:
                     'max_tiempo_experiencia': max_tiempo_experiencia,
                     'cumple_experiencia': cumple_experiencia,
                     'nivel_educativo': nivel_educativo,
-                    'experiencia_relevante': experiencia_relevante
+                    'experiencia_relevante': experiencia_relevante,
+                    'diversidad_habilidades': diversidad_habilidades,
+                    'consistencia_experiencia': consistencia_experiencia,
+                    'promedio_nivel_habilidades': promedio_nivel_habilidades
                 }
-                
+
                 usuarios_features.append(feature_vector)
-            
+
             # Convertir a DataFrame
             df_usuarios = pd.DataFrame(usuarios_features)
-            
+
             # Normalizar características
             features = ['num_habilidades', 'num_conocimientos', 'num_experiencias', 'num_estudios',
-                       'match_habilidades', 'match_conocimientos', 'promedio_nivel_conocimientos',
-                       'max_tiempo_experiencia', 'cumple_experiencia', 'nivel_educativo',
-                       'experiencia_relevante']
-            
+                        'match_habilidades', 'match_conocimientos', 'promedio_nivel_conocimientos',
+                        'max_tiempo_experiencia', 'cumple_experiencia', 'nivel_educativo',
+                        'experiencia_relevante', 'diversidad_habilidades', 'consistencia_experiencia',
+                        'promedio_nivel_habilidades']
+
             # Separar características que ya están normalizadas
             normalized_features = ['match_habilidades', 'match_conocimientos', 'cumple_experiencia']
             scaling_features = [f for f in features if f not in normalized_features]
-            
+
             # Normalizar solo las características que necesitan escalado
-            if scaling_features:
+            if scaling_features and len(df_usuarios) > 0:
                 X_scaled = self.scaler.fit_transform(df_usuarios[scaling_features])
-                X_scaled = pd.DataFrame(X_scaled, columns=scaling_features)
-                
+                X_scaled = pd.DataFrame(X_scaled, columns=scaling_features, index=df_usuarios.index)
+
                 # Combinar con características normalizadas
                 X = pd.concat([X_scaled, df_usuarios[normalized_features]], axis=1)
             else:
                 X = df_usuarios[features]
-            
+
             return X.values, df_usuarios['user_id'].values
-            
+
         except Exception as e:
             logger.error(f"Error preparando datos: {str(e)}")
             raise
-    
-    def train_models(self, X, y):
+
+    def _create_synthetic_labels(self, X):
         """
-        Entrena los modelos de Random Forest y KNN
+        Crea etiquetas sintéticas basadas en las características del usuario
+        """
+        if len(X) == 0:
+            return np.array([]), np.array([])
+
+        # Combinar características clave para crear un score objetivo
+        match_score = (X[:, 5] + X[:, 6]) / 2  # match_habilidades + match_conocimientos
+        experiencia_score = X[:, 8]  # cumple_experiencia
+        educacion_score = np.clip(X[:, 9] / 5, 0, 1)  # nivel_educativo normalizado
+        experiencia_relevante_score = np.clip(X[:, 10] / 10, 0, 1)  # experiencia_relevante
+
+        # Calcular score combinado
+        combined_score = (
+                match_score * 0.4 +
+                experiencia_score * 0.2 +
+                educacion_score * 0.1 +
+                experiencia_relevante_score * 0.3
+        )
+
+        # Convertir a etiquetas binarias (1 si es un buen candidato, 0 si no)
+        if len(combined_score) > 1:
+            threshold = np.percentile(combined_score, 60)  # Top 40% como buenos candidatos
+        else:
+            threshold = 0.5  # Umbral fijo para un solo usuario
+
+        labels = (combined_score >= threshold).astype(int)
+
+        # Asegurar que tengamos al menos una muestra de cada clase si es posible
+        if len(np.unique(labels)) == 1 and len(labels) > 1:
+            # Si todas las etiquetas son iguales, hacer la mitad de cada clase
+            half_point = len(labels) // 2
+            labels[:half_point] = 0
+            labels[half_point:] = 1
+
+        return labels, combined_score
+
+    def _safe_score_calculation(self, y_true, y_pred, metric_func):
+        """
+        Calcula métricas de manera segura, manejando casos edge
         """
         try:
+            if len(np.unique(y_true)) == 1 or len(np.unique(y_pred)) == 1:
+                # Si solo hay una clase, usar accuracy como proxy
+                return accuracy_score(y_true, y_pred)
+            else:
+                return metric_func(y_true, y_pred, average='weighted', zero_division=0)
+        except:
+            return 0.0
+
+    def train_models(self, X, y):
+        """
+        Entrena los tres modelos: Random Forest, KNN y Red Neuronal (MLP)
+        """
+        try:
+            # Validar entrada
+            if len(X) == 0:
+                raise ValueError("No hay datos para entrenar")
+
             # Si solo hay un usuario, calcular scores directamente sin entrenar modelos
             if len(X) == 1:
                 features = X[0]
-                match_score = (features[5] + features[6]) / 2  # Promedio de match_habilidades y match_conocimientos
-                experiencia_score = features[8]  # cumple_experiencia
-                educacion_score = features[9] / 5  # nivel_educativo
-                experiencia_relevante_score = features[10] / 10  # experiencia_relevante
-                
-                # Calcular score combinado con pesos ajustados
+                match_score = (features[5] + features[6]) / 2
+                experiencia_score = features[8]
+                educacion_score = np.clip(features[9] / 5, 0, 1)
+                experiencia_relevante_score = np.clip(features[10] / 10, 0, 1)
+
                 combined_score = (
-                    match_score * 0.4 +
-                    experiencia_score * 0.2 +
-                    educacion_score * 0.1 +
-                    experiencia_relevante_score * 0.3
+                        match_score * 0.4 +
+                        experiencia_score * 0.2 +
+                        educacion_score * 0.1 +
+                        experiencia_relevante_score * 0.3
                 )
-                
-                return {
-                    'accuracy': combined_score,
-                    'precision': combined_score,
-                    'recall': combined_score,
-                    'f1': combined_score
-                }, {
-                    'accuracy': combined_score,
-                    'precision': combined_score,
-                    'recall': combined_score,
-                    'f1': combined_score
+
+                base_scores = {
+                    'accuracy': float(combined_score),
+                    'precision': float(combined_score),
+                    'recall': float(combined_score),
+                    'f1': float(combined_score)
                 }
-            
-            # Dividir datos
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-            
+
+                self.models_trained = False  # No se pueden entrenar con un solo usuario
+                return base_scores, base_scores, base_scores
+
+            # Crear etiquetas sintéticas para la red neuronal
+            nn_labels, score_continuo = self._create_synthetic_labels(X)
+
+            # Validar que tenemos suficientes datos para dividir
+            test_size = min(0.2, max(0.1, 1 / len(X)))  # Ajustar test_size dinámicamente
+
+            # Dividir datos solo si tenemos suficientes muestras
+            if len(X) >= 4:  # Mínimo 4 muestras para hacer split
+                try:
+                    X_train, X_test, y_train, y_test = train_test_split(
+                        X, y, test_size=test_size, random_state=42, stratify=y
+                    )
+                    nn_train, nn_test, nn_y_train, nn_y_test = train_test_split(
+                        X, nn_labels, test_size=test_size, random_state=42, stratify=nn_labels
+                    )
+                except ValueError:  # Si stratify falla, intentar sin stratify
+                    X_train, X_test, y_train, y_test = train_test_split(
+                        X, y, test_size=test_size, random_state=42
+                    )
+                    nn_train, nn_test, nn_y_train, nn_y_test = train_test_split(
+                        X, nn_labels, test_size=test_size, random_state=42
+                    )
+            else:
+                # Con pocos datos, usar todos para entrenamiento y evaluación
+                X_train = X_test = X
+                y_train = y_test = y
+                nn_train = nn_test = X
+                nn_y_train = nn_y_test = nn_labels
+
+            # Inicializar scores por defecto
+            rf_scores = knn_scores = nn_scores = {
+                'accuracy': 0.5,
+                'precision': 0.5,
+                'recall': 0.5,
+                'f1': 0.5
+            }
+
             # Entrenar Random Forest
-            self.rf_model.fit(X_train, y_train)
-            rf_pred = self.rf_model.predict(X_test)
-            rf_scores = {
-                'accuracy': accuracy_score(y_test, rf_pred),
-                'precision': precision_score(y_test, rf_pred, average='weighted'),
-                'recall': recall_score(y_test, rf_pred, average='weighted'),
-                'f1': f1_score(y_test, rf_pred, average='weighted')
-            }
-            
+            try:
+                self.rf_model.fit(X_train, y_train)
+                rf_pred = self.rf_model.predict(X_test)
+                rf_scores = {
+                    'accuracy': accuracy_score(y_test, rf_pred),
+                    'precision': self._safe_score_calculation(y_test, rf_pred, precision_score),
+                    'recall': self._safe_score_calculation(y_test, rf_pred, recall_score),
+                    'f1': self._safe_score_calculation(y_test, rf_pred, f1_score)
+                }
+            except Exception as e:
+                logger.warning(f"Error entrenando Random Forest: {e}")
+
             # Entrenar KNN
-            self.knn_model.fit(X_train, y_train)
-            knn_pred = self.knn_model.predict(X_test)
-            knn_scores = {
-                'accuracy': accuracy_score(y_test, knn_pred),
-                'precision': precision_score(y_test, knn_pred, average='weighted'),
-                'recall': recall_score(y_test, knn_pred, average='weighted'),
-                'f1': f1_score(y_test, knn_pred, average='weighted')
-            }
-            
-            # Ajustar pesos basados en el rendimiento
+            try:
+                # Ajustar n_neighbors si tenemos pocos datos
+                n_neighbors = min(self.knn_model.n_neighbors, len(X_train))
+                if n_neighbors != self.knn_model.n_neighbors:
+                    self.knn_model.set_params(n_neighbors=n_neighbors)
+
+                self.knn_model.fit(X_train, y_train)
+                knn_pred = self.knn_model.predict(X_test)
+                knn_scores = {
+                    'accuracy': accuracy_score(y_test, knn_pred),
+                    'precision': self._safe_score_calculation(y_test, knn_pred, precision_score),
+                    'recall': self._safe_score_calculation(y_test, knn_pred, recall_score),
+                    'f1': self._safe_score_calculation(y_test, knn_pred, f1_score)
+                }
+            except Exception as e:
+                logger.warning(f"Error entrenando KNN: {e}")
+
+            # Entrenar Red Neuronal (MLP)
+            try:
+                self.nn_model.fit(nn_train, nn_y_train)
+                nn_pred = self.nn_model.predict(nn_test)
+                nn_scores = {
+                    'accuracy': accuracy_score(nn_y_test, nn_pred),
+                    'precision': self._safe_score_calculation(nn_y_test, nn_pred, precision_score),
+                    'recall': self._safe_score_calculation(nn_y_test, nn_pred, recall_score),
+                    'f1': self._safe_score_calculation(nn_y_test, nn_pred, f1_score)
+                }
+            except Exception as e:
+                logger.warning(f"Error entrenando Red Neuronal: {e}")
+
+            # Ajustar pesos basados en el rendimiento de los tres modelos
             rf_performance = np.mean([rf_scores['accuracy'], rf_scores['f1']])
             knn_performance = np.mean([knn_scores['accuracy'], knn_scores['f1']])
-            total_performance = rf_performance + knn_performance
-            
-            if total_performance > 0:
-                self.rf_weight = rf_performance / total_performance
-                self.knn_weight = knn_performance / total_performance
-            
-            # Calcular métricas finales usando todos los datos
-            self.rf_model.fit(X, y)
-            self.knn_model.fit(X, y)
-            
-            # Obtener probabilidades para todos los datos
-            rf_probs = self.rf_model.predict_proba(X)
-            knn_probs = self.knn_model.predict_proba(X)
-            
-            # Calcular métricas finales
-            rf_final_scores = {
-                'accuracy': np.mean(rf_probs.max(axis=1)),
-                'precision': np.mean(rf_probs.max(axis=1)),
-                'recall': np.mean(rf_probs.max(axis=1)),
-                'f1': np.mean(rf_probs.max(axis=1))
-            }
-            
-            knn_final_scores = {
-                'accuracy': np.mean(knn_probs.max(axis=1)),
-                'precision': np.mean(knn_probs.max(axis=1)),
-                'recall': np.mean(knn_probs.max(axis=1)),
-                'f1': np.mean(knn_probs.max(axis=1))
-            }
-            
-            return rf_final_scores, knn_final_scores
-            
+            nn_performance = np.mean([nn_scores['accuracy'], nn_scores['f1']])
+
+            total_performance = rf_performance + knn_performance + nn_performance
+
+            #if total_performance > 0:
+            #    self.rf_weight = rf_performance / total_performance
+            #    self.knn_weight = knn_performance / total_performance
+            #    self.nn_weight = nn_performance / total_performance
+            #else:
+                # Pesos por defecto si no se puede calcular performance
+            self.rf_weight = 0.33
+            self.knn_weight = 0.33
+            self.nn_weight = 0.34
+
+            logger.info(
+                f"Pesos ajustados - RF: {self.rf_weight:.3f}, KNN: {self.knn_weight:.3f}, NN: {self.nn_weight:.3f}")
+
+            # Reentrenar con todos los datos si es posible
+            try:
+                if len(X) > 1:
+                    self.rf_model.fit(X, y)
+                    self.knn_model.fit(X, y)
+                    self.nn_model.fit(X, nn_labels)
+                    self.models_trained = True
+            except Exception as e:
+                logger.warning(f"Error reentrenando con todos los datos: {e}")
+
+            return rf_scores, knn_scores, nn_scores
+
         except Exception as e:
             logger.error(f"Error entrenando modelos: {str(e)}")
             raise
-    
+
     def get_recommendations(self, X, user_ids, top_n=5):
         """
-        Obtiene recomendaciones combinando resultados de ambos modelos
+        Obtiene recomendaciones combinando resultados de los tres modelos
         """
         try:
+            if len(X) == 0:
+                return []
+
             # Si solo hay un usuario, calcular score directamente
             if len(X) == 1:
                 features = X[0]
-                match_score = (features[5] + features[6]) / 2  # Promedio de match_habilidades y match_conocimientos
-                experiencia_score = features[8]  # cumple_experiencia
-                educacion_score = features[9] / 5  # nivel_educativo
-                experiencia_relevante_score = features[10] / 10  # experiencia_relevante
-                
-                # Calcular score combinado con pesos ajustados
+                match_score = (features[5] + features[6]) / 2
+                experiencia_score = features[8]
+                educacion_score = np.clip(features[9] / 5, 0, 1)
+                experiencia_relevante_score = np.clip(features[10] / 10, 0, 1)
+
                 combined_score = (
-                    match_score * 0.4 +
-                    experiencia_score * 0.2 +
-                    educacion_score * 0.1 +
-                    experiencia_relevante_score * 0.3
+                        match_score * 0.4 +
+                        experiencia_score * 0.2 +
+                        educacion_score * 0.1 +
+                        experiencia_relevante_score * 0.3
                 )
-                
+
                 return [{
                     'user_id': user_ids[0],
                     'score': float(combined_score),
                     'rf_score': float(combined_score),
                     'knn_score': float(combined_score),
-                    'confidence': 'Alta' if combined_score > 0.7 else 'Media' if combined_score > 0.5 else 'Baja'
+                    'nn_score': float(combined_score),
+                    'confidence': 'Alta' if combined_score > 0.7 else 'Media' if combined_score > 0.5 else 'Baja',
+                    'model_weights': {
+                        'rf': self.rf_weight,
+                        'knn': self.knn_weight,
+                        'nn': self.nn_weight
+                    }
                 }]
-            
+
+            # Si los modelos no están entrenados, usar scoring directo
+            if not self.models_trained:
+                recommendations = []
+                for i, user_id in enumerate(user_ids):
+                    features = X[i]
+                    match_score = (features[5] + features[6]) / 2
+                    experiencia_score = features[8]
+                    educacion_score = np.clip(features[9] / 5, 0, 1)
+                    experiencia_relevante_score = np.clip(features[10] / 10, 0, 1)
+
+                    combined_score = (
+                            match_score * 0.4 +
+                            experiencia_score * 0.2 +
+                            educacion_score * 0.1 +
+                            experiencia_relevante_score * 0.3
+                    )
+
+                    if combined_score > 0.3:  # Solo incluir candidatos con score mínimo
+                        recommendations.append({
+                            'user_id': user_id,
+                            'score': float(combined_score),
+                            'rf_score': float(combined_score),
+                            'knn_score': float(combined_score),
+                            'nn_score': float(combined_score),
+                            'confidence': 'Alta' if combined_score > 0.7 else 'Media' if combined_score > 0.5 else 'Baja',
+                            'model_weights': {
+                                'rf': self.rf_weight,
+                                'knn': self.knn_weight,
+                                'nn': self.nn_weight
+                            }
+                        })
+
+                # Ordenar por score y tomar los mejores
+                recommendations.sort(key=lambda x: x['score'], reverse=True)
+                return recommendations[:top_n]
+
             # Obtener probabilidades de cada modelo
-            rf_probs = self.rf_model.predict_proba(X)
-            knn_probs = self.knn_model.predict_proba(X)
-            
+            try:
+                rf_probs = self.rf_model.predict_proba(X)
+                rf_scores = rf_probs[:, 1] if rf_probs.shape[1] > 1 else rf_probs[:, 0]
+            except:
+                rf_scores = np.full(len(X), 0.5)
+
+            try:
+                knn_probs = self.knn_model.predict_proba(X)
+                knn_scores = knn_probs[:, 1] if knn_probs.shape[1] > 1 else knn_probs[:, 0]
+            except:
+                knn_scores = np.full(len(X), 0.5)
+
+            try:
+                nn_probs = self.nn_model.predict_proba(X)
+                nn_scores = nn_probs[:, 1] if nn_probs.shape[1] > 1 else nn_probs[:, 0]
+            except:
+                nn_scores = np.full(len(X), 0.5)
+
             # Combinar probabilidades con pesos ajustados
-            combined_probs = (self.rf_weight * rf_probs + self.knn_weight * knn_probs)
-            
-            # Calcular scores normalizados
-            scores = combined_probs.max(axis=1)
-            normalized_scores = (scores - scores.min()) / (scores.max() - scores.min())
-            
+            combined_scores = (
+                    self.rf_weight * rf_scores +
+                    self.knn_weight * knn_scores +
+                    self.nn_weight * nn_scores
+            )
+
+            # Normalizar scores combinados
+            if len(combined_scores) > 1:
+                min_score = combined_scores.min()
+                max_score = combined_scores.max()
+                if max_score > min_score:
+                    normalized_scores = (combined_scores - min_score) / (max_score - min_score)
+                else:
+                    normalized_scores = combined_scores
+            else:
+                normalized_scores = combined_scores
+
             # Obtener índices de los mejores candidatos
             top_indices = np.argsort(normalized_scores)[-top_n:][::-1]
-            
+
             # Obtener IDs de usuarios y sus scores
             recommendations = []
             for idx in top_indices:
-                # Calcular confianza del modelo
-                rf_confidence = rf_probs[idx].max()
-                knn_confidence = knn_probs[idx].max()
-                combined_score = normalized_scores[idx]
-                
-                # Solo incluir recomendaciones con score combinado superior a 0.5
-                if combined_score > 0.5:
+                combined_score = float(normalized_scores[idx])
+
+                # Solo incluir recomendaciones con score combinado superior a 0.3
+                if combined_score > 0.3:
                     recommendations.append({
                         'user_id': user_ids[idx],
-                        'score': float(combined_score),
-                        'rf_score': float(rf_confidence),
-                        'knn_score': float(knn_confidence),
-                        'confidence': 'Alta' if combined_score > 0.7 else 'Media' if combined_score > 0.5 else 'Baja'
+                        'score': combined_score,
+                        'rf_score': float(rf_scores[idx]),
+                        'knn_score': float(knn_scores[idx]),
+                        'nn_score': float(nn_scores[idx]),
+                        'confidence': 'Alta' if combined_score > 0.7 else 'Media' if combined_score > 0.5 else 'Baja',
+                        'model_weights': {
+                            'rf': float(self.rf_weight),
+                            'knn': float(self.knn_weight),
+                            'nn': float(self.nn_weight)
+                        }
                     })
-            
+
             return recommendations
-            
+
         except Exception as e:
             logger.error(f"Error obteniendo recomendaciones: {str(e)}")
             raise
 
-class ProfessionalProjectMatcher:
-    def __init__(self):
+    def get_model_performance_summary(self):
         """
-        Inicializa el sistema de matching profesional-proyecto
+        Devuelve un resumen del rendimiento y pesos de los modelos
         """
-        self.db_path = os.path.join(settings.BASE_DIR, 'db.sqlite3')
-        self.professionals_data = None
-        self.projects_data = None
-        self.tfidf_vectorizer = TfidfVectorizer(max_features=1000, stop_words='spanish')
-        self.scaler = StandardScaler()
-
-    def load_data(self):
-        """Carga los datos de la base de datos"""
-        conn = sqlite3.connect(self.db_path)
-
-        # Cargar datos de profesionales con sus habilidades, conocimientos, estudios y experiencia
-        professionals_query = """
-        SELECT 
-            u.id,
-            u.nombres,
-            u.apellidos,
-            u.email,
-            u.puesto_actual,
-            u.dependencia,
-            u.fecha_ingreso,
-            GROUP_CONCAT(DISTINCT uh.habilidad) as habilidades,
-            GROUP_CONCAT(DISTINCT uh.experiencia) as experiencia_habilidades,
-            GROUP_CONCAT(DISTINCT uc.conocimiento || ':' || uc.nivel) as conocimientos,
-            GROUP_CONCAT(DISTINCT ue.estudio || ':' || ue.nivel) as estudios,
-            GROUP_CONCAT(DISTINCT uex.rol || ':' || uex.tiempo) as experiencia_laboral,
-            GROUP_CONCAT(DISTINCT uex.actividades) as actividades
-        FROM core_usuario u
-        LEFT JOIN core_usuario_habilidades uh ON u.id = uh.user_id
-        LEFT JOIN core_usuario_conocimiento uc ON u.id = uc.user_id
-        LEFT JOIN core_usuario_estudios ue ON u.id = ue.user_id
-        LEFT JOIN core_usuario_experiencia uex ON u.id = uex.user_id
-        GROUP BY u.id
-        """
-
-        # Cargar datos de proyectos con roles requeridos
-        projects_query = """
-        SELECT 
-            p.id,
-            p.nombre,
-            p.convocatoria,
-            p.tipo_proyecto,
-            p.tipo_convocatoria,
-            p.alcance,
-            p.objetivo,
-            p.presupuesto,
-            p.fecha,
-            GROUP_CONCAT(DISTINCT pr.rol) as roles_requeridos,
-            GROUP_CONCAT(DISTINCT pr.habilidades) as habilidades_requeridas,
-            GROUP_CONCAT(DISTINCT pr.experiencia) as experiencia_requerida,
-            GROUP_CONCAT(DISTINCT pr.conocimientos) as conocimientos_requeridos
-        FROM core_proyecto p
-        LEFT JOIN core_proyecto_roles pr ON p.id = pr.project_id
-        GROUP BY p.id
-        """
-
-        self.professionals_data = pd.read_sql_query(professionals_query, conn)
-        self.projects_data = pd.read_sql_query(projects_query, conn)
-
-        conn.close()
-
-        # Limpiar datos nulos
-        self.professionals_data = self.professionals_data.fillna('')
-        self.projects_data = self.projects_data.fillna('')
-
-        print(f"Cargados {len(self.professionals_data)} profesionales y {len(self.projects_data)} proyectos")
-
-    def preprocess_data(self):
-        """Preprocesa los datos para los algoritmos de ML"""
-        # Crear texto combinado para profesionales
-        self.professionals_data['texto_completo'] = (
-                self.professionals_data['puesto_actual'] + ' ' +
-                self.professionals_data['habilidades'] + ' ' +
-                self.professionals_data['conocimientos'] + ' ' +
-                self.professionals_data['estudios'] + ' ' +
-                self.professionals_data['experiencia_laboral'] + ' ' +
-                self.professionals_data['actividades']
-        )
-
-        # Crear texto combinado para proyectos
-        self.projects_data['texto_completo'] = (
-                self.projects_data['tipo_proyecto'] + ' ' +
-                self.projects_data['alcance'] + ' ' +
-                self.projects_data['objetivo'] + ' ' +
-                self.projects_data['roles_requeridos'] + ' ' +
-                self.projects_data['habilidades_requeridas'] + ' ' +
-                self.projects_data['experiencia_requerida'] + ' ' +
-                self.projects_data['conocimientos_requeridos']
-        )
-
-        # Crear características numéricas para profesionales
-        self.professionals_data['años_experiencia'] = self._extract_experience_years()
-        self.professionals_data['nivel_educacion'] = self._extract_education_level()
-        self.professionals_data['diversidad_habilidades'] = self.professionals_data['habilidades'].apply(
-            lambda x: len(x.split(',')) if x else 0
-        )
-
-        # Crear características numéricas para proyectos
-        self.projects_data['complejidad_proyecto'] = self._calculate_project_complexity()
-        self.projects_data['num_roles_requeridos'] = self.projects_data['roles_requeridos'].apply(
-            lambda x: len(x.split(',')) if x else 0
-        )
-
-    def _extract_experience_years(self):
-        """Extrae años de experiencia de los datos"""
-        experience_years = []
-        for exp in self.professionals_data['experiencia_laboral']:
-            if exp:
-                years = 0
-                for item in exp.split(','):
-                    if ':' in item:
-                        try:
-                            years += int(item.split(':')[1])
-                        except:
-                            pass
-                experience_years.append(years)
-            else:
-                experience_years.append(0)
-        return experience_years
-
-    def _extract_education_level(self):
-        """Extrae nivel de educación"""
-        education_levels = []
-        for edu in self.professionals_data['estudios']:
-            if edu:
-                max_level = 0
-                for item in edu.split(','):
-                    if ':' in item:
-                        try:
-                            level = int(item.split(':')[1])
-                            max_level = max(max_level, level)
-                        except:
-                            pass
-                education_levels.append(max_level)
-            else:
-                education_levels.append(0)
-        return education_levels
-
-    def _calculate_project_complexity(self):
-        """Calcula complejidad del proyecto basada en presupuesto y texto"""
-        complexity = []
-        for idx, row in self.projects_data.iterrows():
-            score = 0
-            if row['presupuesto']:
-                score += min(row['presupuesto'] / 1000000, 10)  # Normalizar presupuesto
-            score += len(row['texto_completo'].split()) / 100  # Complejidad textual
-            complexity.append(score)
-        return complexity
-
-    def algorithm_1_tfidf_cosine(self, project_id):
-        """
-        Algoritmo 1: TF-IDF + Similitud Coseno
-        Calcula similitud textual entre profesionales y proyecto
-        """
-        project_text = self.projects_data[self.projects_data['id'] == project_id]['texto_completo'].iloc[0]
-        all_texts = list(self.professionals_data['texto_completo']) + [project_text]
-
-        # Vectorizar textos
-        tfidf_matrix = self.tfidf_vectorizer.fit_transform(all_texts)
-
-        # Calcular similitud coseno
-        project_vector = tfidf_matrix[-1]
-        professional_vectors = tfidf_matrix[:-1]
-
-        similarities = cosine_similarity(professional_vectors, project_vector).flatten()
-
-        results = pd.DataFrame({
-            'professional_id': self.professionals_data['id'],
-            'similarity_score': similarities,
-            'algorithm': 'TF-IDF Coseno'
-        })
-
-        return results.sort_values('similarity_score', ascending=False)
-
-    def algorithm_2_random_forest(self, project_id):
-        """
-        Algoritmo 2: Random Forest
-        Predice compatibilidad basada en características numéricas
-        """
-        # Preparar características de profesionales
-        prof_features = self.professionals_data[[
-            'años_experiencia', 'nivel_educacion', 'diversidad_habilidades'
-        ]].copy()
-
-        # Obtener características del proyecto
-        project_row = self.projects_data[self.projects_data['id'] == project_id].iloc[0]
-        project_complexity = project_row['complejidad_proyecto']
-        num_roles = project_row['num_roles_requeridos']
-
-        # Crear targets sintéticos basados en compatibilidad esperada
-        synthetic_targets = []
-        for idx, prof in prof_features.iterrows():
-            score = 0
-            # Mayor experiencia = mejor match
-            score += min(prof['años_experiencia'] / 10, 1) * 0.4
-            # Educación apropiada
-            score += min(prof['nivel_educacion'] / 5, 1) * 0.3
-            # Diversidad de habilidades
-            score += min(prof['diversidad_habilidades'] / 10, 1) * 0.3
-            # Ajustar por complejidad del proyecto
-            score *= min(project_complexity / 5, 1)
-            synthetic_targets.append(score)
-
-        prof_features['target'] = synthetic_targets
-
-        # Entrenar Random Forest
-        X = prof_features[['años_experiencia', 'nivel_educacion', 'diversidad_habilidades']]
-        y = prof_features['target']
-
-        rf = RandomForestRegressor(n_estimators=100, random_state=42)
-        rf.fit(X, y)
-
-        # Predecir compatibilidad
-        predictions = rf.predict(X)
-
-        results = pd.DataFrame({
-            'professional_id': self.professionals_data['id'],
-            'compatibility_score': predictions,
-            'algorithm': 'Random Forest'
-        })
-
-        return results.sort_values('compatibility_score', ascending=False)
-
-    def algorithm_3_neural_network(self, project_id):
-        """
-        Algoritmo 3: Red Neuronal (MLP)
-        Combina características textuales y numéricas
-        """
-        # Preparar características textuales (reducidas)
-        project_text = self.projects_data[self.projects_data['id'] == project_id]['texto_completo'].iloc[0]
-        all_texts = list(self.professionals_data['texto_completo']) + [project_text]
-
-        # TF-IDF con menos características para la red neuronal
-        tfidf_vectorizer_small = TfidfVectorizer(max_features=50, stop_words='spanish')
-        tfidf_matrix = tfidf_vectorizer_small.fit_transform(all_texts)
-
-        # Características textuales de profesionales
-        text_features = tfidf_matrix[:-1].toarray()
-
-        # Características numéricas
-        numeric_features = self.professionals_data[[
-            'años_experiencia', 'nivel_educacion', 'diversidad_habilidades'
-        ]].values
-
-        # Combinar características
-        combined_features = np.hstack([text_features, numeric_features])
-
-        # Normalizar
-        combined_features_scaled = self.scaler.fit_transform(combined_features)
-
-        # Crear targets sintéticos más sofisticados
-        project_vector = tfidf_matrix[-1].toarray().flatten()
-        synthetic_targets = []
-
-        for i, prof_vector in enumerate(text_features):
-            # Similitud textual
-            text_similarity = cosine_similarity([prof_vector], [project_vector])[0][0]
-
-            # Características numéricas normalizadas
-            prof_numeric = numeric_features[i]
-            numeric_score = (
-                    min(prof_numeric[0] / 15, 1) * 0.4 +  # experiencia
-                    min(prof_numeric[1] / 5, 1) * 0.3 +  # educación
-                    min(prof_numeric[2] / 8, 1) * 0.3  # habilidades
-            )
-
-            # Combinar puntuaciones
-            final_score = text_similarity * 0.6 + numeric_score * 0.4
-            synthetic_targets.append(final_score)
-
-        # Entrenar MLP
-        mlp = MLPRegressor(hidden_layer_sizes=(100, 50), max_iter=500, random_state=42)
-        mlp.fit(combined_features_scaled, synthetic_targets)
-
-        # Predecir
-        predictions = mlp.predict(combined_features_scaled)
-
-        results = pd.DataFrame({
-            'professional_id': self.professionals_data['id'],
-            'neural_score': predictions,
-            'algorithm': 'Red Neuronal'
-        })
-
-        return results.sort_values('neural_score', ascending=False)
-
-    def generate_recommendations(self, project_id, top_n=10):
-        """
-        Genera recomendaciones combinando los tres algoritmos
-        """
-        print(f"\nGenerando recomendaciones para el proyecto ID: {project_id}")
-        print("=" * 60)
-
-        # Obtener información del proyecto
-        project_info = self.projects_data[self.projects_data['id'] == project_id].iloc[0]
-        print(f"Proyecto: {project_info['nombre']}")
-        print(f"Tipo: {project_info['tipo_proyecto']}")
-        print(f"Presupuesto: ${project_info['presupuesto']:,}" if project_info['presupuesto'] else "No especificado")
-        print("\n" + "=" * 60)
-
-        # Ejecutar algoritmos
-        results_1 = self.algorithm_1_tfidf_cosine(project_id)
-        results_2 = self.algorithm_2_random_forest(project_id)
-        results_3 = self.algorithm_3_neural_network(project_id)
-
-        # Combinar resultados
-        combined_results = pd.merge(
-            results_1[['professional_id', 'similarity_score']],
-            results_2[['professional_id', 'compatibility_score']],
-            on='professional_id'
-        )
-        combined_results = pd.merge(
-            combined_results,
-            results_3[['professional_id', 'neural_score']],
-            on='professional_id'
-        )
-
-        # Normalizar puntuaciones (0-1)
-        combined_results['similarity_score_norm'] = (
-                combined_results['similarity_score'] / combined_results['similarity_score'].max()
-        )
-        combined_results['compatibility_score_norm'] = (
-                combined_results['compatibility_score'] / combined_results['compatibility_score'].max()
-        )
-        combined_results['neural_score_norm'] = (
-                combined_results['neural_score'] / combined_results['neural_score'].max()
-        )
-
-        # Calcular puntuación final combinada
-        combined_results['final_score'] = (
-                combined_results['similarity_score_norm'] * 0.35 +
-                combined_results['compatibility_score_norm'] * 0.35 +
-                combined_results['neural_score_norm'] * 0.30
-        )
-
-        # Ordenar por puntuación final
-        combined_results = combined_results.sort_values('final_score', ascending=False)
-
-        # Agregar información de profesionales
-        detailed_results = pd.merge(
-            combined_results,
-            self.professionals_data[['id', 'nombres', 'apellidos', 'email', 'puesto_actual',
-                                     'dependencia', 'años_experiencia', 'nivel_educacion']],
-            left_on='professional_id',
-            right_on='id'
-        )
-
-        return detailed_results.head(top_n)
-
-    def print_detailed_report(self, recommendations, project_id):
-        """Imprime un reporte detallado de las recomendaciones"""
-        project_info = self.projects_data[self.projects_data['id'] == project_id].iloc[0]
-
-        print(f"\n{'=' * 80}")
-        print(f"REPORTE DETALLADO DE RECOMENDACIONES")
-        print(f"{'=' * 80}")
-        print(f"Proyecto: {project_info['nombre']}")
-        print(f"Objetivo: {project_info['objetivo'][:200]}...")
-        print(f"Roles requeridos: {project_info['roles_requeridos']}")
-        print(f"Habilidades requeridas: {project_info['habilidades_requeridas']}")
-        print(f"\n{'=' * 80}")
-        print(f"TOP {len(recommendations)} CANDIDATOS RECOMENDADOS:")
-        print(f"{'=' * 80}")
-
-        for idx, row in recommendations.iterrows():
-            print(f"\n#{recommendations.index.get_loc(idx) + 1}. {row['nombres']} {row['apellidos']}")
-            print(f"   Email: {row['email']}")
-            print(f"   Puesto actual: {row['puesto_actual']}")
-            print(f"   Dependencia: {row['dependencia']}")
-            print(f"   Años de experiencia: {row['años_experiencia']}")
-            print(f"   Nivel educativo: {row['nivel_educacion']}")
-            print(f"   PUNTUACIONES:")
-            print(f"     • Similitud TF-IDF: {row['similarity_score']:.3f}")
-            print(f"     • Random Forest: {row['compatibility_score']:.3f}")
-            print(f"     • Red Neuronal: {row['neural_score']:.3f}")
-            print(f"     • PUNTUACIÓN FINAL: {row['final_score']:.3f}")
-            print(f"   {'-' * 50}")
-
-        print(f"\n{'=' * 80}")
-        print("RESUMEN DE ALGORITMOS UTILIZADOS:")
-        print(f"{'=' * 80}")
-        print("1. TF-IDF + Similitud Coseno:")
-        print("   - Analiza similitud textual entre perfil profesional y proyecto")
-        print("   - Considera habilidades, experiencia, conocimientos y estudios")
-
-        print("\n2. Random Forest:")
-        print("   - Evalúa compatibilidad basada en características numéricas")
-        print("   - Considera años de experiencia, nivel educativo y diversidad de habilidades")
-
-        print("\n3. Red Neuronal (MLP):")
-        print("   - Combina análisis textual y numérico")
-        print("   - Aprende patrones complejos entre características")
-
-        print(f"\n4. Puntuación Final:")
-        print("   - Combinación ponderada: TF-IDF (35%) + Random Forest (35%) + Red Neuronal (30%)") 
+        return {
+            'model_weights': {
+                'random_forest': float(self.rf_weight),
+                'knn': float(self.knn_weight),
+                'neural_network': float(self.nn_weight)
+            },
+            'models_trained': {
+                'random_forest': self.models_trained and self.rf_model is not None,
+                'knn': self.models_trained and self.knn_model is not None,
+                'neural_network': self.models_trained and self.nn_model is not None
+            },
+            'overall_trained': self.models_trained
+        }
