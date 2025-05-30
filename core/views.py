@@ -17,6 +17,10 @@ from django import forms
 import logging
 import datetime
 from .ml_models import RecommendationSystem
+from .forms import (
+    UsuarioForm, HabilidadFormSet, ConocimientoFormSet,
+    EstudioFormSet, ExperienciaFormSet
+)
 
 logger = logging.getLogger(__name__)
 
@@ -1305,3 +1309,48 @@ class RecomendacionDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         context['usuarios_recomendados'] = self.object.usuarios_recomendados.all()
         return context
+
+def crear_usuario(request):
+    if request.method == 'POST':
+        form = UsuarioForm(request.POST)
+        habilidad_formset = HabilidadFormSet(request.POST, prefix='habilidades')
+        conocimiento_formset = ConocimientoFormSet(request.POST, prefix='conocimientos')
+        estudio_formset = EstudioFormSet(request.POST, prefix='estudios')
+        experiencia_formset = ExperienciaFormSet(request.POST, prefix='experiencias')
+
+        if form.is_valid() and all([
+            habilidad_formset.is_valid(),
+            conocimiento_formset.is_valid(),
+            estudio_formset.is_valid(),
+            experiencia_formset.is_valid()
+        ]):
+            usuario = form.save()
+            
+            # Guardar los formsets
+            habilidad_formset.instance = usuario
+            conocimiento_formset.instance = usuario
+            estudio_formset.instance = usuario
+            experiencia_formset.instance = usuario
+            
+            habilidad_formset.save()
+            conocimiento_formset.save()
+            estudio_formset.save()
+            experiencia_formset.save()
+
+            messages.success(request, 'Usuario creado exitosamente.')
+            return redirect('detalle_usuario', pk=usuario.pk)
+    else:
+        form = UsuarioForm()
+        habilidad_formset = HabilidadFormSet(prefix='habilidades')
+        conocimiento_formset = ConocimientoFormSet(prefix='conocimientos')
+        estudio_formset = EstudioFormSet(prefix='estudios')
+        experiencia_formset = ExperienciaFormSet(prefix='experiencias')
+
+    context = {
+        'form': form,
+        'habilidad_formset': habilidad_formset,
+        'conocimiento_formset': conocimiento_formset,
+        'estudio_formset': estudio_formset,
+        'experiencia_formset': experiencia_formset,
+    }
+    return render(request, 'core/crear_usuario.html', context)

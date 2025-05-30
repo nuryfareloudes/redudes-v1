@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Crear Nuevo Usuario</h2>
+
+    <form method="post" class="needs-validation" novalidate>
+        {% csrf_token %}
+
+        <!-- Información Básica -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>Información Básica</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ form.nombres|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.apellidos|as_crispy_field }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ form.email|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.telefono|as_crispy_field }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ form.puesto_actual|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.dependencia|as_crispy_field }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ form.url_cvlac|as_crispy_field }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.url_linkedin|as_crispy_field }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ form.fecha_ingreso|as_crispy_field }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Habilidades -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4>Habilidades</h4>
+                <button type="button" class="btn btn-primary btn-sm" id="add-habilidad">
+                    <i class="fas fa-plus"></i> Agregar Habilidad
+                </button>
+            </div>
+            <div class="card-body">
+                {{ habilidad_formset.management_form }}
+                <div id="habilidades-formset">
+                    {% for form in habilidad_formset %}
+                        <div class="habilidad-form mb-3">
+                            {{ form|crispy }}
+                            {% if form.instance.pk %}
+                                {{ form.DELETE|as_crispy_field }}
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Conocimientos -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4>Conocimientos</h4>
+                <button type="button" class="btn btn-primary btn-sm" id="add-conocimiento">
+                    <i class="fas fa-plus"></i> Agregar Conocimiento
+                </button>
+            </div>
+            <div class="card-body">
+                {{ conocimiento_formset.management_form }}
+                <div id="conocimientos-formset">
+                    {% for form in conocimiento_formset %}
+                        <div class="conocimiento-form mb-3">
+                            {{ form|crispy }}
+                            {% if form.instance.pk %}
+                                {{ form.DELETE|as_crispy_field }}
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Estudios -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4>Estudios</h4>
+                <button type="button" class="btn btn-primary btn-sm" id="add-estudio">
+                    <i class="fas fa-plus"></i> Agregar Estudio
+                </button>
+            </div>
+            <div class="card-body">
+                {{ estudio_formset.management_form }}
+                <div id="estudios-formset">
+                    {% for form in estudio_formset %}
+                        <div class="estudio-form mb-3">
+                            {{ form|crispy }}
+                            {% if form.instance.pk %}
+                                {{ form.DELETE|as_crispy_field }}
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Experiencia -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4>Experiencia Laboral</h4>
+                <button type="button" class="btn btn-primary btn-sm" id="add-experiencia">
+                    <i class="fas fa-plus"></i> Agregar Experiencia
+                </button>
+            </div>
+            <div class="card-body">
+                {{ experiencia_formset.management_form }}
+                <div id="experiencias-formset">
+                    {% for form in experiencia_formset %}
+                        <div class="experiencia-form mb-3">
+                            {{ form|crispy }}
+                            {% if form.instance.pk %}
+                                {{ form.DELETE|as_crispy_field }}
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-4">
+            <a href="{% url 'lista_usuarios' %}" class="btn btn-secondary me-md-2">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Guardar Usuario</button>
+        </div>
+    </form>
+</div>
+
+{% block extra_js %}
+<script>
+    // Funciones para agregar nuevos formularios dinámicamente
+    function addForm(formsetPrefix, formsetContainer) {
+        const totalForms = document.getElementById(`id_${formsetPrefix}-TOTAL_FORMS`);
+        const formCount = parseInt(totalForms.value);
+        const formset = document.getElementById(`${formsetPrefix}-formset`);
+        const emptyForm = document.querySelector(`#${formsetPrefix}-formset .${formsetPrefix}-form`).cloneNode(true);
+        
+        // Actualizar IDs y nombres
+        emptyForm.querySelectorAll('input, select, textarea').forEach(input => {
+            const name = input.getAttribute('name');
+            if (name) {
+                input.setAttribute('name', name.replace(/-\d+-/, `-${formCount}-`));
+                input.setAttribute('id', input.getAttribute('id').replace(/-\d+-/, `-${formCount}-`));
+            }
+        });
+        
+        // Limpiar valores
+        emptyForm.querySelectorAll('input, select, textarea').forEach(input => {
+            if (input.type !== 'hidden') {
+                input.value = '';
+            }
+        });
+        
+        formset.appendChild(emptyForm);
+        totalForms.value = formCount + 1;
+    }
+
+    // Event listeners para los botones de agregar
+    document.getElementById('add-habilidad').addEventListener('click', () => addForm('habilidades', 'habilidades-formset'));
+    document.getElementById('add-conocimiento').addEventListener('click', () => addForm('conocimientos', 'conocimientos-formset'));
+    document.getElementById('add-estudio').addEventListener('click', () => addForm('estudios', 'estudios-formset'));
+    document.getElementById('add-experiencia').addEventListener('click', () => addForm('experiencias', 'experiencias-formset'));
+</script>
+{% endblock %}
+{% endblock %} 
