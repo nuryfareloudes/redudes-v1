@@ -28,7 +28,7 @@
                                 <div class="card-header bg-info text-white">
                                     <h5 class="mb-0">
                                         <i class="fas fa-tree"></i> Random Forest
-                                        <span class="badge bg-light text-dark ms-2">Peso: {{ recomendacion.rf_weight|floatformat:3 }}</span>
+                                        <span class="badge bg-light text-dark ms-2">Peso: {{ recommendations.rf_score }}</span>
                                     </h5>
                                 </div>
                                 <div class="card-body">
@@ -55,14 +55,14 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- KNN -->
                         <div class="col-md-4">
                             <div class="card">
                                 <div class="card-header bg-success text-white">
                                     <h5 class="mb-0">
                                         <i class="fas fa-users"></i> K-Nearest Neighbors
-                                        <span class="badge bg-light text-dark ms-2">Peso: {{ recomendacion.knn_weight|floatformat:3 }}</span>
+                                        <span class="badge bg-light text-dark ms-2">Peso: {{ model_weights.knn|floatformat:3 }}</span>
                                     </h5>
                                 </div>
                                 <div class="card-body">
@@ -89,14 +89,14 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Red Neuronal -->
                         <div class="col-md-4">
                             <div class="card">
                                 <div class="card-header bg-warning text-white">
                                     <h5 class="mb-0">
                                         <i class="fas fa-brain"></i> Red Neuronal
-                                        <span class="badge bg-light text-dark ms-2">Peso: {{ recomendacion.nn_weight|floatformat:3 }}</span>
+                                        <span class="badge bg-light text-dark ms-2">Peso: {{ model_weights.nn|floatformat:3 }}</span>
                                     </h5>
                                 </div>
                                 <div class="card-body">
@@ -124,7 +124,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Resumen de modelo combinado -->
                     <div class="row mb-4">
                         <div class="col-md-12">
@@ -132,14 +132,14 @@
                                 <h5><i class="fas fa-info-circle"></i> Información del Modelo Combinado</h5>
                                 <p class="mb-0">
                                     Los resultados combinan tres algoritmos de machine learning con pesos dinámicos basados en su rendimiento:
-                                    <strong>Random Forest ({{ recomendacion.rf_weight|floatformat:1|multiply:100 }}%)</strong>, 
-                                    <strong>KNN ({{ recomendacion.knn_weight|floatformat:1|multiply:100 }}%)</strong>, y 
+                                    <strong>Random Forest ({{ recomendacion.rf_weight|floatformat:1|multiply:100 }}%)</strong>,
+                                    <strong>KNN ({{ recomendacion.knn_weight|floatformat:1|multiply:100 }}%)</strong>, y
                                     <strong>Red Neuronal ({{ recomendacion.nn_weight|floatformat:1|multiply:100 }}%)</strong>.
                                 </p>
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Lista de usuarios recomendados -->
                     <div class="row">
                         <div class="col-md-12">
@@ -179,10 +179,10 @@
                                                     </td>
                                                     <td>
                                                         <div class="progress mb-1" style="height: 20px;">
-                                                            <div class="progress-bar {% if recomendacion_usuario.score_combinado > 0.7 %}bg-success{% elif recomendacion_usuario.score_combinado > 0.5 %}bg-info{% else %}bg-warning{% endif %} fw-bold" 
-                                                                 role="progressbar" 
+                                                            <div class="progress-bar {% if recomendacion_usuario.score_combinado > 0.7 %}bg-success{% elif recomendacion_usuario.score_combinado > 0.5 %}bg-info{% else %}bg-warning{% endif %} fw-bold"
+                                                                 role="progressbar"
                                                                  style="width: {{ recomendacion_usuario.score_combinado|floatformat:2|multiply:100 }}%"
-                                                                 aria-valuenow="{{ recomendacion_usuario.score_combinado|floatformat:2|multiply:100 }}" 
+                                                                 aria-valuenow="{{ recomendacion_usuario.score_combinado|floatformat:2|multiply:100 }}"
                                                                  aria-valuemin="0" aria-valuemax="100">
                                                                 {{ recomendacion_usuario.score_combinado|floatformat:2|multiply:100 }}%
                                                             </div>
@@ -191,9 +191,9 @@
                                                     </td>
                                                     <td>
                                                         <div class="progress mb-1" style="height: 15px;">
-                                                            <div class="progress-bar bg-info" role="progressbar" 
+                                                            <div class="progress-bar bg-info" role="progressbar"
                                                                  style="width: {{ recomendacion_usuario.score_rf|floatformat:2|multiply:100 }}%"
-                                                                 aria-valuenow="{{ recomendacion_usuario.score_rf|floatformat:2|multiply:100 }}" 
+                                                                 aria-valuenow="{{ recomendacion_usuario.score_rf|floatformat:2|multiply:100 }}"
                                                                  aria-valuemin="0" aria-valuemax="100">
                                                             </div>
                                                         </div>
@@ -201,9 +201,9 @@
                                                     </td>
                                                     <td>
                                                         <div class="progress mb-1" style="height: 15px;">
-                                                            <div class="progress-bar bg-success" role="progressbar" 
+                                                            <div class="progress-bar bg-success" role="progressbar"
                                                                  style="width: {{ recomendacion_usuario.score_knn|floatformat:2|multiply:100 }}%"
-                                                                 aria-valuenow="{{ recomendacion_usuario.score_knn|floatformat:2|multiply:100 }}" 
+                                                                 aria-valuenow="{{ recomendacion_usuario.score_knn|floatformat:2|multiply:100 }}"
                                                                  aria-valuemin="0" aria-valuemax="100">
                                                             </div>
                                                         </div>
@@ -211,9 +211,9 @@
                                                     </td>
                                                     <td>
                                                         <div class="progress mb-1" style="height: 15px;">
-                                                            <div class="progress-bar bg-warning" role="progressbar" 
+                                                            <div class="progress-bar bg-warning" role="progressbar"
                                                                  style="width: {{ recomendacion_usuario.score_nn|floatformat:2|multiply:100 }}%"
-                                                                 aria-valuenow="{{ recomendacion_usuario.score_nn|floatformat:2|multiply:100 }}" 
+                                                                 aria-valuenow="{{ recomendacion_usuario.score_nn|floatformat:2|multiply:100 }}"
                                                                  aria-valuemin="0" aria-valuemax="100">
                                                             </div>
                                                         </div>
@@ -232,12 +232,12 @@
                                                     </td>
                                                     <td>
                                                         <div class="btn-group-vertical btn-group-sm">
-                                                            <a href="{% url 'usuario_detail' pk=recomendacion_usuario.user_id.id %}" 
+                                                            <a href="{% url 'usuario_detail' pk=recomendacion_usuario.user_id.id %}"
                                                                class="btn btn-info btn-sm mb-1">
                                                                 <i class="fas fa-user"></i> Ver Perfil
                                                             </a>
-                                                            <button type="button" class="btn btn-outline-secondary btn-sm" 
-                                                                    data-bs-toggle="tooltip" data-bs-placement="left" 
+                                                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                                    data-bs-toggle="tooltip" data-bs-placement="left"
                                                                     title="RF: {{ recomendacion_usuario.score_rf|floatformat:3 }} | KNN: {{ recomendacion_usuario.score_knn|floatformat:3 }} | NN: {{ recomendacion_usuario.score_nn|floatformat:3 }}">
                                                                 <i class="fas fa-chart-bar"></i> Detalles
                                                             </button>
@@ -248,7 +248,7 @@
                                             </tbody>
                                         </table>
                                     </div>
-                                    
+
                                     <!-- Estadísticas de recomendaciones -->
                                     <div class="row mt-3">
                                         <div class="col-md-4">
@@ -286,7 +286,7 @@
                                     {% else %}
                                     <div class="alert alert-warning">
                                         <h5><i class="fas fa-exclamation-triangle"></i> Sin Recomendaciones</h5>
-                                        <p class="mb-0">No se encontraron perfiles que cumplan con los criterios mínimos para este proyecto. 
+                                        <p class="mb-0">No se encontraron perfiles que cumplan con los criterios mínimos para este proyecto.
                                         Considera revisar los requisitos del proyecto o ampliar los criterios de búsqueda.</p>
                                     </div>
                                     {% endif %}
@@ -294,7 +294,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Botones de acción -->
                     <div class="d-flex justify-content-between mt-4">
                         <div>

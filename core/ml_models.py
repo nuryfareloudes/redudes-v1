@@ -542,7 +542,7 @@ class RecommendationSystem:
                         'rf_score': float(rf_scores[idx]),
                         'knn_score': float(knn_scores[idx]),
                         'nn_score': float(nn_scores[idx]),
-                        'confidence': 'Alta' if combined_score > 0.7 else 'Media' if combined_score > 0.5 else 'Baja',
+                        'confidence': 'Alta-a' if combined_score > 0.7 else 'Media-a' if combined_score > 0.5 else 'Baja-a',
                         'model_weights': {
                             'rf': float(self.rf_weight),
                             'knn': float(self.knn_weight),

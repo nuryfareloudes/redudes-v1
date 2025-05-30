@@ -1302,7 +1302,11 @@ def generar_recomendaciones(request, proyecto_id):
             knn_accuracy=knn_scores['accuracy'],
             knn_precision=knn_scores['precision'],
             knn_recall=knn_scores['recall'],
-            knn_f1=knn_scores['f1']
+            knn_f1=knn_scores['f1'],
+            nn_accuracy = nn_scores['accuracy'],
+            nn_precision = nn_scores['precision'],
+            nn_recall = nn_scores['recall'],
+            nn_f1 = nn_scores['f1']
         )
         
         # Guardar recomendaciones de usuarios
@@ -1314,6 +1318,7 @@ def generar_recomendaciones(request, proyecto_id):
                 score_combinado=rec['score'],
                 score_rf=rec['rf_score'],
                 score_knn=rec['knn_score'],
+                #score_nn=rec['nn_score'],
                 ranking=idx
             )
         
