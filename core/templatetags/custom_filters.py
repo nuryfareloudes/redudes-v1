@@ -20,6 +20,15 @@ def count_by_score(usuarios, max_score):
         return 0
 
 @register.filter
+def count_by_min_score(usuarios, min_score):
+    """Cuenta usuarios con score mayor o igual al valor dado"""
+    try:
+        min_score = float(min_score)
+        return len([u for u in usuarios if getattr(u, 'score_combinado', 0) >= min_score])
+    except (ValueError, TypeError):
+        return 0
+
+@register.filter
 def subtract(value, arg):
     """Resta dos números"""
     try:

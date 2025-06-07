@@ -36,7 +36,7 @@
                                         <table class="table table-sm">
                                             <tr>
                                                 <th>Accuracy:</th>
-                                                <td>{{ recomendacion.rf_accuracy|floatformat:4 }}</td>
+                                                <td>{{ recomendacion.rf_accuracy }}</td>
                                             </tr>
                                             <tr>
                                                 <th>Precision:</th>
@@ -255,7 +255,9 @@
                                             <div class="text-center">
                                                 <h5 class="text-success">
                                                     {% load custom_filters %}
-                                                    {{ usuarios_recomendados|length|subtract:usuarios_recomendados|count_by_score:"0.7" }}
+                                                    {% with alta_count=usuarios_recomendados|filter_by_score_range:"0.7,1"|length %}
+                                                        {{ alta_count }}
+                                                    {% endwith %}
                                                 </h5>
                                                 <small class="text-muted">Candidatos Alta Confianza</small>
                                             </div>
@@ -275,7 +277,7 @@
                                             <div class="text-center">
                                                 <h5 class="text-warning">
                                                     {% load custom_filters %}
-                                                    {% with baja_count=usuarios_recomendados|filter_by_score_range:"score_combinado__lte:0.5"|length %}
+                                                    {% with baja_count=usuarios_recomendados|filter_by_score_range:"0.0,0.5"|length %}
                                                         {{ baja_count }}
                                                     {% endwith %}
                                                 </h5>

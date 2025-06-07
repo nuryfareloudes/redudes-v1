@@ -387,15 +387,18 @@ class RecommendationSystem:
 
             total_performance = rf_performance + knn_performance + nn_performance
 
-            #if total_performance > 0:
-            #    self.rf_weight = rf_performance / total_performance
-            #    self.knn_weight = knn_performance / total_performance
-            #    self.nn_weight = nn_performance / total_performance
-            #else:
+            if total_performance > 0:
+                self.rf_weight = rf_performance / total_performance
+                self.knn_weight = knn_performance / total_performance
+                self.nn_weight = nn_performance / total_performance
+            else:
                 # Pesos por defecto si no se puede calcular performance
-            self.rf_weight = 0.33
-            self.knn_weight = 0.33
-            self.nn_weight = 0.34
+                self.rf_weight = 0.33
+                self.knn_weight = 0.33
+                self.nn_weight = 0.34
+
+            logger.info(
+                f"Pesos performance - RF: {rf_performance:.3f}, KNN: {knn_performance:.3f}, NN: {nn_performance:.3f}")
 
             logger.info(
                 f"Pesos ajustados - RF: {self.rf_weight:.3f}, KNN: {self.knn_weight:.3f}, NN: {self.nn_weight:.3f}")
@@ -510,9 +513,9 @@ class RecommendationSystem:
 
             # Combinar probabilidades con pesos ajustados
             combined_scores = (
-                    self.rf_weight * rf_scores +
-                    self.knn_weight * knn_scores +
-                    self.nn_weight * nn_scores
+                self.rf_weight * rf_scores +
+                self.knn_weight * knn_scores +
+                self.nn_weight * nn_scores
             )
 
             # Normalizar scores combinados

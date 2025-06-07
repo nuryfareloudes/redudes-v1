@@ -1318,7 +1318,7 @@ def generar_recomendaciones(request, proyecto_id):
                 score_combinado=rec['score'],
                 score_rf=rec['rf_score'],
                 score_knn=rec['knn_score'],
-                #score_nn=rec['nn_score'],
+                score_nn=rec['nn_score'],
                 ranking=idx
             )
         

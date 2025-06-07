@@ -97,6 +97,10 @@ class RecomendacionProyecto(models.Model):
     knn_precision = models.FloatField()
     knn_recall = models.FloatField()
     knn_f1 = models.FloatField()
+    nn_accuracy = models.FloatField(null=True, blank=True)
+    nn_precision = models.FloatField(null=True, blank=True)
+    nn_recall = models.FloatField(null=True, blank=True)
+    nn_f1 = models.FloatField(null=True, blank=True)
 
     def __str__(self):
         return f"Recomendación para {self.project_id.nombre} - {self.fecha_recomendacion}"
@@ -108,6 +112,7 @@ class RecomendacionUsuario(models.Model):
     score_combinado = models.FloatField()
     score_rf = models.FloatField()
     score_knn = models.FloatField()
+    score_nn = models.FloatField(null=True, blank=True)
     ranking = models.IntegerField()
     nivel_confianza = models.CharField(max_length=50, default='Media')  # Alta, Media, Baja
     match_habilidades = models.FloatField(default=0.0)
