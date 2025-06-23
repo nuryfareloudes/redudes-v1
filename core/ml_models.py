@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import sys
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
@@ -107,8 +108,7 @@ class RecommendationSystem:
                         if hasattr(h, 'habilidad'):
                             habilidades_usuario.add(h.habilidad.lower())
 
-                match_habilidades = len(habilidades_usuario.intersection(roles_habilidades)) / len(
-                    roles_habilidades) if roles_habilidades else 0
+                match_habilidades = len(habilidades_usuario.intersection(roles_habilidades)) / len(roles_habilidades) if roles_habilidades else 0
 
                 # Calcular match de conocimientos con peso
                 conocimientos_usuario = set()
@@ -117,8 +117,7 @@ class RecommendationSystem:
                         if hasattr(c, 'conocimiento'):
                             conocimientos_usuario.add(c.conocimiento.lower())
 
-                match_conocimientos = len(conocimientos_usuario.intersection(roles_conocimientos)) / len(
-                    roles_conocimientos) if roles_conocimientos else 0
+                match_conocimientos = len(conocimientos_usuario.intersection(roles_conocimientos)) / len(roles_conocimientos) if roles_conocimientos else 0
 
                 # Calcular nivel promedio de conocimientos relevantes
                 niveles_conocimientos = []
@@ -283,10 +282,10 @@ class RecommendationSystem:
                 experiencia_relevante_score = np.clip(features[10] / 10, 0, 1)
 
                 combined_score = (
-                        match_score * 0.4 +
-                        experiencia_score * 0.2 +
-                        educacion_score * 0.1 +
-                        experiencia_relevante_score * 0.3
+                    match_score * 0.4 +
+                    experiencia_score * 0.2 +
+                    educacion_score * 0.1 +
+                    experiencia_relevante_score * 0.3
                 )
 
                 base_scores = {
@@ -298,6 +297,8 @@ class RecommendationSystem:
 
                 self.models_trained = False  # No se pueden entrenar con un solo usuario
                 return base_scores, base_scores, base_scores
+            
+            ### Fin del cálculo para 1 solo resultado
 
             # Crear etiquetas sintéticas para la red neuronal
             nn_labels, score_continuo = self._create_synthetic_labels(X)
@@ -387,15 +388,15 @@ class RecommendationSystem:
 
             total_performance = rf_performance + knn_performance + nn_performance
 
-            if total_performance > 0:
-                self.rf_weight = rf_performance / total_performance
-                self.knn_weight = knn_performance / total_performance
-                self.nn_weight = nn_performance / total_performance
-            else:
+            ##if total_performance > 0:
+            ##    self.rf_weight = rf_performance / total_performance
+            ##    self.knn_weight = knn_performance / total_performance
+            ##    self.nn_weight = nn_performance / total_performance
+            ##else:
                 # Pesos por defecto si no se puede calcular performance
-                self.rf_weight = 0.33
-                self.knn_weight = 0.33
-                self.nn_weight = 0.34
+            self.rf_weight = 0.30
+            self.knn_weight = 0.20
+            self.nn_weight = 0.50
 
             logger.info(
                 f"Pesos performance - RF: {rf_performance:.3f}, KNN: {knn_performance:.3f}, NN: {nn_performance:.3f}")
@@ -421,7 +422,7 @@ class RecommendationSystem:
 
     def get_recommendations(self, X, user_ids, top_n=5):
         """
-        Obtiene recomendaciones combinando resultados de los tres modelos
+        Obtiene recomendaciones usando únicamente la Red Neuronal
         """
         try:
             if len(X) == 0:
@@ -450,9 +451,9 @@ class RecommendationSystem:
                     'nn_score': float(combined_score),
                     'confidence': 'Alta' if combined_score > 0.7 else 'Media' if combined_score > 0.5 else 'Baja',
                     'model_weights': {
-                        'rf': self.rf_weight,
-                        'knn': self.knn_weight,
-                        'nn': self.nn_weight
+                        'rf': 0.0,
+                        'knn': 0.0,
+                        'nn': 1.0
                     }
                 }]
 
@@ -482,9 +483,9 @@ class RecommendationSystem:
                             'nn_score': float(combined_score),
                             'confidence': 'Alta' if combined_score > 0.7 else 'Media' if combined_score > 0.5 else 'Baja',
                             'model_weights': {
-                                'rf': self.rf_weight,
-                                'knn': self.knn_weight,
-                                'nn': self.nn_weight
+                                'rf': 0.0,
+                                'knn': 0.0,
+                                'nn': 1.0
                             }
                         })
 
@@ -492,7 +493,7 @@ class RecommendationSystem:
                 recommendations.sort(key=lambda x: x['score'], reverse=True)
                 return recommendations[:top_n]
 
-            # Obtener probabilidades de cada modelo
+            # Obtener probabilidades de cada modelo (mantener cálculos para debugging)
             try:
                 rf_probs = self.rf_model.predict_proba(X)
                 rf_scores = rf_probs[:, 1] if rf_probs.shape[1] > 1 else rf_probs[:, 0]
@@ -511,12 +512,8 @@ class RecommendationSystem:
             except:
                 nn_scores = np.full(len(X), 0.5)
 
-            # Combinar probabilidades con pesos ajustados
-            combined_scores = (
-                self.rf_weight * rf_scores +
-                self.knn_weight * knn_scores +
-                self.nn_weight * nn_scores
-            )
+            # Usar únicamente los scores de la Red Neuronal para las recomendaciones
+            combined_scores = nn_scores
 
             # Normalizar scores combinados
             if len(combined_scores) > 1:
@@ -531,7 +528,7 @@ class RecommendationSystem:
 
             # Obtener índices de los mejores candidatos
             top_indices = np.argsort(normalized_scores)[-top_n:][::-1]
-
+            print(top_indices)
             # Obtener IDs de usuarios y sus scores
             recommendations = []
             for idx in top_indices:
@@ -545,11 +542,11 @@ class RecommendationSystem:
                         'rf_score': float(rf_scores[idx]),
                         'knn_score': float(knn_scores[idx]),
                         'nn_score': float(nn_scores[idx]),
-                        'confidence': 'Alta-a' if combined_score > 0.7 else 'Media-a' if combined_score > 0.5 else 'Baja-a',
+                        'confidence': 'Alta' if combined_score > 0.7 else 'Media' if combined_score > 0.5 else 'Baja',
                         'model_weights': {
-                            'rf': float(self.rf_weight),
-                            'knn': float(self.knn_weight),
-                            'nn': float(self.nn_weight)
+                            'rf': 0.0,
+                            'knn': 0.0,
+                            'nn': 1.0
                         }
                     })
 
@@ -565,14 +562,15 @@ class RecommendationSystem:
         """
         return {
             'model_weights': {
-                'random_forest': float(self.rf_weight),
-                'knn': float(self.knn_weight),
-                'neural_network': float(self.nn_weight)
+                'random_forest': 0.0,
+                'knn': 0.0,
+                'neural_network': 1.0
             },
             'models_trained': {
                 'random_forest': self.models_trained and self.rf_model is not None,
                 'knn': self.models_trained and self.knn_model is not None,
                 'neural_network': self.models_trained and self.nn_model is not None
             },
-            'overall_trained': self.models_trained
+            'overall_trained': self.models_trained,
+            'active_model': 'neural_network'
         }

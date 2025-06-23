@@ -1289,8 +1289,8 @@ def generar_recomendaciones(request, proyecto_id):
         # Entrenar modelos y obtener métricas
         rf_scores, knn_scores, nn_scores = recommender.train_models(X, user_ids)
         
-        # Obtener recomendaciones
-        recommendations = recommender.get_recommendations(X, user_ids)
+        # Obtener recomendaciones (ahora 10 candidatos)
+        recommendations = recommender.get_recommendations(X, user_ids, top_n=10)
         
         # Guardar resultados en la base de datos
         recomendacion = RecomendacionProyecto.objects.create(
@@ -1339,6 +1339,16 @@ class RecomendacionDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['usuarios_recomendados'] = self.object.usuarios_recomendados.all()
+        
+        # Agregar información específica de la red neuronal
+        context['model_weights'] = {
+            'rf': 0.0,
+            'knn': 0.0,
+            'nn': 1.0
+        }
+        context['active_model'] = 'Red Neuronal'
+        context['model_description'] = 'Sistema de recomendación basado únicamente en Red Neuronal (MLP)'
+        
         return context
 
 def crear_usuario(request):
