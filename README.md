@@ -54,4 +54,10 @@ REDUDES es ideal para:
 
 - La extracción de datos de LinkedIn puede requerir autenticación debido a las restricciones de la plataforma.
 - Se recomienda usar URLs públicas de CVLAC para obtener mejores resultados.
-- Los logs de depuración se almacenan en el directorio `debug_logs/`. 
+- Los logs de depuración se almacenan en el directorio `debug_logs/`.
+
+## Requisitos
+
+- Python 3.12
+- pip
+- (Recomendado) Entorno virtual 

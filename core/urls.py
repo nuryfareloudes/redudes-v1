@@ -60,6 +60,10 @@ urlpatterns = [
     # URLs para recomendaciones
     path('proyectos/<int:proyecto_id>/recomendaciones/generar/', views.generar_recomendaciones, name='generar_recomendaciones'),
     path('recomendaciones/<int:recomendacion_id>/', views.RecomendacionDetailView.as_view(), name='ver_recomendaciones'),
+    path('proyectos/<int:proyecto_id>/recomendaciones/generar-avanzada/', views.generar_recomendaciones_avanzadas, name='generar_recomendaciones_avanzadas'),
+    path('recomendaciones-avanzada/<int:recomendacion_id>/', views.RecomendacionAvanzadaDetailView.as_view(), name='ver_recomendaciones_avanzadas'),
+    path('proyectos/<int:proyecto_id>/recomendaciones/generar-cnn/', views.generar_recomendaciones_cnn, name='generar_recomendaciones_cnn'),
+    path('recomendaciones-cnn/<int:recomendacion_id>/', views.RecomendacionCNNDetailView.as_view(), name='ver_recomendaciones_cnn'),
     
     # Autenticación
     path('login/', auth_views.LoginView.as_view(template_name='core/login.html'), name='login'),

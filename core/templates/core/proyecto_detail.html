@@ -263,6 +263,9 @@
                         <a href="{% url 'proyecto_list' %}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Volver a la lista
                         </a>
+                        <a href="{% url 'generar_recomendaciones_avanzadas' proyecto_id=proyecto.id %}" class="btn btn-info ml-2">
+                            <i class="fas fa-robot"></i> Recomendación Avanzada
+                        </a>
                     </div>
                 </div>
             </div>

@@ -1,0 +1,121 @@
+{% extends 'core/base.html' %}
+{% load custom_filters %}
+
+{% block title %}Recomendaciones CNN para {{ recomendacion.project_id.nombre }} | REDUDES{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Recomendaciones de Perfiles (CNN)</h4>
+                    <span class="badge bg-light text-dark">{{ recomendacion.fecha_recomendacion|date:"d/m/Y H:i" }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h2 class="text-primary">{{ recomendacion.project_id.nombre }}</h2>
+                            <p class="text-muted">Resultados del análisis de perfiles usando Red Neuronal Convolucional (CNN)</p>
+                        </div>
+                    </div>
+                    <!-- Lista de usuarios recomendados -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-users"></i> Perfiles Recomendados (CNN)
+                                        <span class="badge bg-dark ms-2 text-white">{{ usuarios_recomendados|length }} candidatos</span>
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if usuarios_recomendados %}
+                                    <div class="table-responsive">
+                                        <table class="table table-striped">
+                                            <thead class="table-dark">
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Usuario</th>
+                                                    <th>Score CNN</th>
+                                                    <th>Confianza</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for recomendacion_usuario in usuarios_recomendados %}
+                                                <tr class="{% if recomendacion_usuario.score_cnn > 0.7 %}table-success{% elif recomendacion_usuario.score_cnn > 0.5 %}table-info{% else %}table-warning{% endif %}">
+                                                    <td>
+                                                        <span class="badge bg-secondary">{{ recomendacion_usuario.ranking }}</span>
+                                                    </td>
+                                                    <td>
+                                                        <strong>{{ recomendacion_usuario.user_id.nombres }} {{ recomendacion_usuario.user_id.apellidos }}</strong>
+                                                        <br>
+                                                        <small class="text-muted">{{ recomendacion_usuario.user_id.email }}</small>
+                                                    </td>
+                                                    <td>
+                                                        <div class="progress mb-1" style="height: 20px;">
+                                                            <div class="progress-bar {% if recomendacion_usuario.score_cnn > 0.7 %}bg-success{% elif recomendacion_usuario.score_cnn > 0.5 %}bg-info{% else %}bg-warning{% endif %} fw-bold"
+                                                                 role="progressbar"
+                                                                 style="width: {{ recomendacion_usuario.score_cnn|floatformat:4|multiply:100 }}%"
+                                                                 aria-valuenow="{{ recomendacion_usuario.score_cnn|floatformat:4|multiply:100 }}"
+                                                                 aria-valuemin="0" aria-valuemax="100">
+                                                                {{ recomendacion_usuario.score_cnn|floatformat:5|multiply:100 }}%
+                                                            </div>
+                                                        </div>
+                                                        <small class="text-muted">{{ recomendacion_usuario.score_cnn|floatformat:4 }}</small>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge fs-6 {% if recomendacion_usuario.score_cnn > 0.7 %}bg-success{% elif recomendacion_usuario.score_cnn > 0.5 %}bg-info{% else %}bg-warning{% endif %}">
+                                                            {% if recomendacion_usuario.score_cnn > 0.7 %}
+                                                                <i class="fas fa-star"></i> Alta
+                                                            {% elif recomendacion_usuario.score_cnn > 0.5 %}
+                                                                <i class="fas fa-star-half-alt"></i> Media
+                                                            {% else %}
+                                                                <i class="far fa-star"></i> Baja
+                                                            {% endif %}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="btn-group-vertical btn-group-sm">
+                                                            <a href="{% url 'usuario_detail' pk=recomendacion_usuario.user_id.id %}"
+                                                               class="btn btn-info btn-sm mb-1" target="_blank">
+                                                                <i class="fas fa-user"></i> Ver Perfil
+                                                            </a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <div class="alert alert-warning">
+                                        <h5><i class="fas fa-exclamation-triangle"></i> Sin Recomendaciones</h5>
+                                        <p class="mb-0">No se encontraron perfiles que cumplan con los criterios mínimos para este proyecto.
+                                        Considera revisar los requisitos del proyecto o ampliar los criterios de búsqueda.</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Botones de acción -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <div>
+                            <a href="{% url 'proyecto_detail' pk=recomendacion.project_id.id %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Volver al Proyecto
+                            </a>
+                        </div>
+                        <div>
+                            <a href="{% url 'generar_recomendaciones_cnn' proyecto_id=recomendacion.project_id.id %}" class="btn btn-dark me-2">
+                                <i class="fas fa-brain"></i> Regenerar CNN
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

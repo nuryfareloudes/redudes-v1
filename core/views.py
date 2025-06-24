@@ -21,6 +21,7 @@ from .forms import (
     UsuarioForm, HabilidadFormSet, ConocimientoFormSet,
     EstudioFormSet, ExperienciaFormSet
 )
+from .advanced_ml_models import AdvancedRecommendationSystem
 
 logger = logging.getLogger(__name__)
 
@@ -1395,3 +1396,129 @@ def crear_usuario(request):
         'experiencia_formset': experiencia_formset,
     }
     return render(request, 'core/crear_usuario.html', context)
+
+@login_required
+def generar_recomendaciones_avanzadas(request, proyecto_id):
+    """
+    Vista para generar recomendaciones avanzadas de usuarios para un proyecto
+    """
+    try:
+        proyecto = get_object_or_404(Proyecto, id=proyecto_id)
+        usuarios = Usuario.objects.all()
+        roles_proyecto = ProyectoRoles.objects.filter(project_id=proyecto)
+        recommender = AdvancedRecommendationSystem()
+        X, user_ids = recommender.prepare_advanced_data(usuarios, roles_proyecto)
+        recommender.train_advanced_models(X, user_ids)
+        adv_scores = recommender.get_advanced_performance_summary()
+        recommendations = recommender.get_advanced_recommendations(X, user_ids, top_n=10)
+        # Guardar resultados en la base de datos (puedes crear un nuevo objeto o reutilizar el modelo existente)
+        recomendacion = RecomendacionProyecto.objects.create(
+            project_id=proyecto,
+            rf_accuracy=0,
+            rf_precision=0,
+            rf_recall=0,
+            rf_f1=0,
+            knn_accuracy=0,
+            knn_precision=0,
+            knn_recall=0,
+            knn_f1=0,
+            nn_accuracy=adv_scores.get('accuracy', 0),
+            nn_precision=adv_scores.get('precision', 0),
+            nn_recall=adv_scores.get('recall', 0),
+            nn_f1=adv_scores.get('f1', 0)
+        )
+        for idx, rec in enumerate(recommendations, 1):
+            usuario = Usuario.objects.get(id=rec['user_id'])
+            RecomendacionUsuario.objects.create(
+                recomendacion_id=recomendacion,
+                user_id=usuario,
+                score_combinado=rec['score'],
+                score_rf=0,
+                score_knn=0,
+                score_nn=rec['score'],
+                ranking=idx
+            )
+        messages.success(request, "Recomendación avanzada generada exitosamente.")
+        return redirect('ver_recomendaciones_avanzadas', recomendacion_id=recomendacion.id)
+    except Exception as e:
+        logger.error(f"Error generando recomendación avanzada: {str(e)}")
+        messages.error(request, f"Error generando recomendación avanzada: {str(e)}")
+        return redirect('proyecto_detail', pk=proyecto_id)
+
+class RecomendacionAvanzadaDetailView(LoginRequiredMixin, DetailView):
+    model = RecomendacionProyecto
+    template_name = 'core/recomendacion_avanzada_detail.html'
+    context_object_name = 'recomendacion'
+    pk_url_kwarg = 'recomendacion_id'
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        usuarios_recomendados = self.object.usuarios_recomendados.all()
+        # Agregar score_avanzado a cada usuario recomendado
+        for u in usuarios_recomendados:
+            u.score_avanzado = u.score_nn
+        context['usuarios_recomendados'] = usuarios_recomendados
+        # Para compatibilidad con el template avanzado
+        context['advanced_accuracy'] = self.object.nn_accuracy
+        context['advanced_precision'] = self.object.nn_precision
+        context['advanced_recall'] = self.object.nn_recall
+        context['advanced_f1'] = self.object.nn_f1
+        return context
+
+@login_required
+def generar_recomendaciones_cnn(request, proyecto_id):
+    """
+    Vista para generar recomendaciones de usuarios usando CNN para un proyecto
+    """
+    try:
+        proyecto = get_object_or_404(Proyecto, id=proyecto_id)
+        usuarios = Usuario.objects.all()
+        roles_proyecto = ProyectoRoles.objects.filter(project_id=proyecto)
+        recommender = AdvancedRecommendationSystem()
+        X, user_ids = recommender.prepare_advanced_data(usuarios, roles_proyecto)
+        recommendations = recommender.get_cnn_recommendations(X, user_ids, top_n=10)
+        # Guardar resultados en la base de datos
+        recomendacion = RecomendacionProyecto.objects.create(
+            project_id=proyecto,
+            rf_accuracy=0,
+            rf_precision=0,
+            rf_recall=0,
+            rf_f1=0,
+            knn_accuracy=0,
+            knn_precision=0,
+            knn_recall=0,
+            knn_f1=0,
+            nn_accuracy=0,
+            nn_precision=0,
+            nn_recall=0,
+            nn_f1=0
+        )
+        for idx, rec in enumerate(recommendations, 1):
+            usuario = Usuario.objects.get(id=rec['user_id'])
+            RecomendacionUsuario.objects.create(
+                recomendacion_id=recomendacion,
+                user_id=usuario,
+                score_combinado=rec['score'],
+                score_rf=0,
+                score_knn=0,
+                score_nn=rec['cnn_score'],
+                ranking=idx
+            )
+        messages.success(request, "Recomendación CNN generada exitosamente.")
+        return redirect('ver_recomendaciones_cnn', recomendacion_id=recomendacion.id)
+    except Exception as e:
+        logger.error(f"Error generando recomendación CNN: {str(e)}")
+        messages.error(request, f"Error generando recomendación CNN: {str(e)}")
+        return redirect('proyecto_detail', pk=proyecto_id)
+
+class RecomendacionCNNDetailView(LoginRequiredMixin, DetailView):
+    model = RecomendacionProyecto
+    template_name = 'core/recomendacion_cnn_detail.html'
+    context_object_name = 'recomendacion'
+    pk_url_kwarg = 'recomendacion_id'
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        usuarios_recomendados = self.object.usuarios_recomendados.all()
+        for u in usuarios_recomendados:
+            u.score_cnn = u.score_nn
+        context['usuarios_recomendados'] = usuarios_recomendados
+        return context

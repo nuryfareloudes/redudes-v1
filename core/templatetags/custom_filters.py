@@ -74,3 +74,27 @@ def count_baja_confianza(usuarios):
         return len([u for u in usuarios if getattr(u, 'score_nn', 0) < 0.5])
     except:
         return 0
+
+@register.filter
+def count_alta_confianza_avanzado(usuarios):
+    """Cuenta usuarios con alta confianza (score_avanzado >= 0.7)"""
+    try:
+        return len([u for u in usuarios if getattr(u, 'score_avanzado', 0) >= 0.7])
+    except:
+        return 0
+
+@register.filter
+def count_media_confianza_avanzado(usuarios):
+    """Cuenta usuarios con media confianza (0.5 <= score_avanzado < 0.7)"""
+    try:
+        return len([u for u in usuarios if 0.5 <= getattr(u, 'score_avanzado', 0) < 0.7])
+    except:
+        return 0
+
+@register.filter
+def count_baja_confianza_avanzado(usuarios):
+    """Cuenta usuarios con baja confianza (score_avanzado < 0.5)"""
+    try:
+        return len([u for u in usuarios if getattr(u, 'score_avanzado', 0) < 0.5])
+    except:
+        return 0

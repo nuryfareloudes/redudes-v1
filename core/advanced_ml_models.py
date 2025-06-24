@@ -14,6 +14,10 @@ from sklearn.pipeline import Pipeline
 import logging
 import warnings
 from collections import Counter
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv1D, Dense, Flatten, Dropout, MaxPooling1D, BatchNormalization
+from tensorflow.keras.optimizers import Adam
 
 # Suprimir advertencias
 warnings.filterwarnings('ignore', category=UserWarning, message='.*Precision is ill-defined.*')
@@ -592,3 +596,65 @@ class AdvancedRecommendationSystem:
                 'advanced_features': 'Coherencia, Progresión, Especialización, Complejidad'
             }
         }
+    
+    def get_cnn_recommendations(self, X, user_ids, top_n=10):
+        """
+        Obtiene recomendaciones usando una red neuronal convolucional (CNN)
+        """
+        try:
+            if len(X) == 0:
+                return []
+            X_cnn = X
+            # Normalización
+            X_cnn = (X_cnn - X_cnn.mean(axis=0)) / (X_cnn.std(axis=0) + 1e-8)
+            # Redimensionar para CNN (samples, timesteps, features)
+            X_cnn = X_cnn.reshape((X_cnn.shape[0], X_cnn.shape[1], 1))
+            # Etiquetas sintéticas
+            labels, scores = self._create_advanced_labels(X.reshape((X.shape[0], X.shape[1])))
+            # Definir modelo CNN simple
+            model = Sequential([
+                Conv1D(32, 3, activation='relu', input_shape=(X_cnn.shape[1], 1)),
+                BatchNormalization(),
+                MaxPooling1D(2),
+                Dropout(0.2),
+                Conv1D(64, 3, activation='relu'),
+                BatchNormalization(),
+                MaxPooling1D(2),
+                Dropout(0.2),
+                Flatten(),
+                Dense(64, activation='relu'),
+                Dropout(0.2),
+                Dense(1, activation='sigmoid')
+            ])
+            model.compile(optimizer=Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
+            # Entrenamiento
+            model.fit(X_cnn, labels, epochs=30, batch_size=8, verbose=0)
+            # Predicciones
+            y_pred = model.predict(X_cnn).flatten()
+            # Normalizar
+            if len(y_pred) > 1:
+                min_score = y_pred.min()
+                max_score = y_pred.max()
+                if max_score > min_score:
+                    normalized_scores = (y_pred - min_score) / (max_score - min_score)
+                else:
+                    normalized_scores = y_pred
+            else:
+                normalized_scores = y_pred
+            # Seleccionar top_n
+            top_indices = normalized_scores.argsort()[-top_n:][::-1]
+            recommendations = []
+            for idx in top_indices:
+                score = float(normalized_scores[idx])
+                if score > 0.3:
+                    recommendations.append({
+                        'user_id': user_ids[idx],
+                        'score': score,
+                        'cnn_score': float(y_pred[idx]),
+                        'confidence': 'Alta' if score > 0.7 else 'Media' if score > 0.5 else 'Baja',
+                        'model_type': 'CNN'
+                    })
+            return recommendations
+        except Exception as e:
+            logger.error(f"Error en recomendaciones CNN: {str(e)}")
+            return []
