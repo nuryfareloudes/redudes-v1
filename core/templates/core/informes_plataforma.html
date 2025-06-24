@@ -1,0 +1,305 @@
+{% extends 'core/base.html' %}
+{% load custom_filters %}
+
+{% block title %}Informes de Plataforma | REDUDES{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-chart-bar"></i> Informes de Uso de la Plataforma
+                    </h4>
+                    <a href="{% url 'exportar_informe_plataforma_pdf' %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-file-pdf"></i> Exportar PDF
+                    </a>
+                </div>
+                <div class="card-body">
+                    <!-- Estadísticas Generales -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white text-center">
+                                <div class="card-body">
+                                    <h3 class="card-title">{{ total_proyectos }}</h3>
+                                    <p class="card-text">Total Proyectos</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white text-center">
+                                <div class="card-body">
+                                    <h3 class="card-title">{{ total_usuarios }}</h3>
+                                    <p class="card-text">Total Usuarios</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white text-center">
+                                <div class="card-body">
+                                    <h3 class="card-title">{{ total_recomendaciones }}</h3>
+                                    <p class="card-text">Total Recomendaciones</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white text-center">
+                                <div class="card-body">
+                                    <h3 class="card-title">{{ total_usuarios_recomendados }}</h3>
+                                    <p class="card-text">Usuarios Recomendados</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Proyectos por Tipo -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-project-diagram"></i> Proyectos por Tipo
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if proyectos_por_tipo %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead class="table-dark">
+                                                <tr>
+                                                    <th>Tipo</th>
+                                                    <th>Cantidad</th>
+                                                    <th>Porcentaje</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for proyecto in proyectos_por_tipo %}
+                                                <tr>
+                                                    <td>{{ proyecto.tipo_proyecto }}</td>
+                                                    <td>{{ proyecto.cantidad }}</td>
+                                                    <td>
+                                                        <div class="progress" style="height: 20px;">
+                                                            <div class="progress-bar" role="progressbar" 
+                                                                 style="width: {{ proyecto.cantidad|multiply:100|divide:total_proyectos }}%">
+                                                                {{ proyecto.cantidad|multiply:100|divide:total_proyectos|floatformat:1 }}%
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <p class="text-muted">No hay datos disponibles</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Proyectos por Convocatoria -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-calendar-alt"></i> Top 10 Convocatorias
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if proyectos_por_convocatoria %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead class="table-dark">
+                                                <tr>
+                                                    <th>Convocatoria</th>
+                                                    <th>Cantidad</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for convocatoria in proyectos_por_convocatoria %}
+                                                <tr>
+                                                    <td>{{ convocatoria.convocatoria|truncatechars:30 }}</td>
+                                                    <td>
+                                                        <span class="badge bg-primary text-white">{{ convocatoria.cantidad }}</span>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <p class="text-muted">No hay datos disponibles</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Usuarios con Más Habilidades -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-users"></i> Usuarios con Más Habilidades
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if usuarios_mas_habilidades %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead class="table-dark">
+                                                <tr>
+                                                    <th>Usuario</th>
+                                                    <th>Habilidades</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for usuario in usuarios_mas_habilidades %}
+                                                <tr>
+                                                    <td>{{ usuario.nombres }} {{ usuario.apellidos }}</td>
+                                                    <td>
+                                                        <span class="badge bg-success text-white">{{ usuario.num_habilidades }}</span>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <p class="text-muted">No hay datos disponibles</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Usuarios con Más Conocimientos -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-graduation-cap"></i> Usuarios con Más Conocimientos
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if usuarios_mas_conocimientos %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead class="table-dark">
+                                                <tr>
+                                                    <th>Usuario</th>
+                                                    <th>Conocimientos</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for usuario in usuarios_mas_conocimientos %}
+                                                <tr>
+                                                    <td>{{ usuario.nombres }} {{ usuario.apellidos }}</td>
+                                                    <td>
+                                                        <span class="badge bg-info text-white">{{ usuario.num_conocimientos }}</span>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <p class="text-muted">No hay datos disponibles</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Proyectos Más Activos -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-star"></i> Proyectos Más Activos
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if proyectos_mas_activos %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead class="table-dark">
+                                                <tr>
+                                                    <th>Proyecto</th>
+                                                    <th>Roles</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for proyecto in proyectos_mas_activos %}
+                                                <tr>
+                                                    <td>{{ proyecto.nombre|truncatechars:30 }}</td>
+                                                    <td>
+                                                        <span class="badge bg-warning text-white">{{ proyecto.num_roles }}</span>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <p class="text-muted">No hay datos disponibles</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Usuarios Más Recomendados -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-trophy"></i> Usuarios Más Recomendados
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if usuarios_mas_recomendados %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead class="table-dark">
+                                                <tr>
+                                                    <th>Usuario</th>
+                                                    <th>Recomendaciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for usuario in usuarios_mas_recomendados %}
+                                                <tr>
+                                                    <td>{{ usuario.nombres }} {{ usuario.apellidos }}</td>
+                                                    <td>
+                                                        <span class="badge bg-danger text-white">{{ usuario.veces_recomendado }}</span>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <p class="text-muted">No hay datos disponibles</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navegación -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'home' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver al Inicio
+                        </a>
+                        <a href="{% url 'informes_recomendaciones' %}" class="btn btn-primary">
+                            <i class="fas fa-chart-line"></i> Ver Informes de Recomendaciones
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

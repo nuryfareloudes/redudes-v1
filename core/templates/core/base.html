@@ -147,6 +147,21 @@
                 </a>
             </li>
 
+            <!-- Nav Item - Informes -->
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="informesDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-chart-bar"></i> Informes
+                </a>
+                <div class="dropdown-menu" aria-labelledby="informesDropdown">
+                    <a class="dropdown-item" href="{% url 'informes_plataforma' %}">
+                        <i class="fas fa-chart-pie"></i> Informes de Plataforma
+                    </a>
+                    <a class="dropdown-item" href="{% url 'informes_recomendaciones' %}">
+                        <i class="fas fa-chart-line"></i> Informes de Recomendaciones
+                    </a>
+                </div>
+            </li>
+
             <!-- Divider -->
             <hr class="sidebar-divider d-none d-md-block">
 

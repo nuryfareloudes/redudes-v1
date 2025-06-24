@@ -1,0 +1,156 @@
+{% extends 'core/base.html' %}
+{% load custom_filters %}
+
+{% block title %}Informes de Recomendaciones | REDUDES{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-chart-line"></i> Informes de Recomendaciones
+                    </h4>
+                    <a href="{% url 'informes_plataforma' %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-chart-bar"></i> Informes de Plataforma
+                    </a>
+                </div>
+                <div class="card-body">
+                    <!-- Estadísticas de Recomendaciones -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white text-center">
+                                <div class="card-body">
+                                    <h3 class="card-title">{{ todas_recomendaciones.count }}</h3>
+                                    <p class="card-text">Total Recomendaciones</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white text-center">
+                                <div class="card-body">
+                                    <h3 class="card-title">{{ scores_distribucion.alta_confianza }}</h3>
+                                    <p class="card-text">Alta Confianza</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white text-center">
+                                <div class="card-body">
+                                    <h3 class="card-title">{{ scores_distribucion.media_confianza }}</h3>
+                                    <p class="card-text">Media Confianza</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-danger text-white text-center">
+                                <div class="card-body">
+                                    <h3 class="card-title">{{ scores_distribucion.baja_confianza }}</h3>
+                                    <p class="card-text">Baja Confianza</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Recomendaciones por Proyecto -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-project-diagram"></i> Recomendaciones por Proyecto
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if recomendaciones_por_proyecto %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead class="table-dark">
+                                                <tr>
+                                                    <th>Proyecto</th>
+                                                    <th>Cantidad</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for rec in recomendaciones_por_proyecto %}
+                                                <tr>
+                                                    <td>{{ rec.project_id__nombre|truncatechars:25 }}</td>
+                                                    <td>
+                                                        <span class="badge bg-primary text-white">{{ rec.cantidad }}</span>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <p class="text-muted">No hay datos disponibles</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Top Usuarios por Score -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-trophy"></i> Top 20 Usuarios por Score
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if top_usuarios_score %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead class="table-dark">
+                                                <tr>
+                                                    <th>Usuario</th>
+                                                    <th>Score</th>
+                                                    <th>Confianza</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for rec in top_usuarios_score %}
+                                                <tr>
+                                                    <td>{{ rec.user_id.nombres }} {{ rec.user_id.apellidos }}</td>
+                                                    <td>
+                                                        <span class="badge bg-primary text-white">{{ rec.score_combinado|floatformat:3 }}</span>
+                                                    </td>
+                                                    <td>
+                                                        {% if rec.score_combinado > 0.7 %}
+                                                            <span class="badge bg-success text-white">Alta</span>
+                                                        {% elif rec.score_combinado > 0.5 %}
+                                                            <span class="badge bg-warning text-white">Media</span>
+                                                        {% else %}
+                                                            <span class="badge bg-danger text-white">Baja</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <p class="text-muted">No hay datos disponibles</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navegación -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'home' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver al Inicio
+                        </a>
+                        <a href="{% url 'informes_plataforma' %}" class="btn btn-primary">
+                            <i class="fas fa-chart-bar"></i> Ver Informes de Plataforma
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

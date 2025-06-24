@@ -69,4 +69,9 @@ urlpatterns = [
     # Autenticación
     path('login/', auth_views.LoginView.as_view(template_name='core/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login', template_name='core/logout.html'), name='logout'),
+    
+    # URLs para informes
+    path('informes/plataforma/', views.informes_plataforma, name='informes_plataforma'),
+    path('informes/recomendaciones/', views.informes_recomendaciones, name='informes_recomendaciones'),
+    path('informes/plataforma/exportar-pdf/', views.exportar_informe_plataforma_pdf, name='exportar_informe_plataforma_pdf'),
 ] 

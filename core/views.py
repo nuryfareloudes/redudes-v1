@@ -29,6 +29,9 @@ from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 import io
+from django.db.models import Count, Avg, Q, Max
+from django.utils import timezone
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -1680,3 +1683,266 @@ def exportar_recomendaciones_pdf(request, recomendacion_id):
         logger.error(f"Error exportando PDF: {str(e)}")
         messages.error(request, f"Error exportando PDF: {str(e)}")
         return redirect('ver_recomendaciones', recomendacion_id=recomendacion_id)
+
+@login_required
+def informes_plataforma(request):
+    """
+    Vista para mostrar informes de uso de la plataforma
+    """
+    try:
+        # Estadísticas generales
+        total_proyectos = Proyecto.objects.count()
+        total_usuarios = Usuario.objects.count()
+        total_recomendaciones = RecomendacionProyecto.objects.count()
+        
+        # Proyectos por tipo
+        proyectos_por_tipo = Proyecto.objects.values('tipo_proyecto').annotate(
+            cantidad=Count('id')
+        ).order_by('-cantidad')
+        
+        # Proyectos por convocatoria
+        proyectos_por_convocatoria = Proyecto.objects.values('convocatoria').annotate(
+            cantidad=Count('id')
+        ).order_by('-cantidad')[:10]
+        
+        # Usuarios con más habilidades
+        usuarios_mas_habilidades = Usuario.objects.annotate(
+            num_habilidades=Count('habilidades')
+        ).order_by('-num_habilidades')[:10]
+        
+        # Usuarios con más conocimientos
+        usuarios_mas_conocimientos = Usuario.objects.annotate(
+            num_conocimientos=Count('conocimientos')
+        ).order_by('-num_conocimientos')[:10]
+        
+        # Recomendaciones por mes (últimos 6 meses)
+        fecha_limite = timezone.now() - timedelta(days=180)
+        recomendaciones_por_mes = RecomendacionProyecto.objects.filter(
+            fecha_recomendacion__gte=fecha_limite
+        ).extra(
+            select={'mes': "DATE_TRUNC('month', fecha_recomendacion)"}
+        ).values('mes').annotate(
+            cantidad=Count('id')
+        ).order_by('mes')
+        
+        # Proyectos más activos (con más roles)
+        proyectos_mas_activos = Proyecto.objects.annotate(
+            num_roles=Count('proyectoroles')
+        ).order_by('-num_roles')[:10]
+        
+        # Estadísticas de usuarios recomendados
+        total_usuarios_recomendados = RecomendacionUsuario.objects.count()
+        if total_usuarios_recomendados > 0:
+            promedio_score = RecomendacionUsuario.objects.aggregate(
+                promedio=Avg('score_combinado')
+            )['promedio']
+        else:
+            promedio_score = 0
+        
+        # Usuarios más recomendados
+        usuarios_mas_recomendados = Usuario.objects.annotate(
+            veces_recomendado=Count('recomendacionusuario')
+        ).filter(veces_recomendado__gt=0).order_by('-veces_recomendado')[:10]
+        
+        context = {
+            'total_proyectos': total_proyectos,
+            'total_usuarios': total_usuarios,
+            'total_recomendaciones': total_recomendaciones,
+            'total_usuarios_recomendados': total_usuarios_recomendados,
+            'promedio_score': promedio_score,
+            'proyectos_por_tipo': proyectos_por_tipo,
+            'proyectos_por_convocatoria': proyectos_por_convocatoria,
+            'usuarios_mas_habilidades': usuarios_mas_habilidades,
+            'usuarios_mas_conocimientos': usuarios_mas_conocimientos,
+            'recomendaciones_por_mes': recomendaciones_por_mes,
+            'proyectos_mas_activos': proyectos_mas_activos,
+            'usuarios_mas_recomendados': usuarios_mas_recomendados,
+        }
+        
+        return render(request, 'core/informes_plataforma.html', context)
+        
+    except Exception as e:
+        logger.error(f"Error generando informes: {str(e)}")
+        messages.error(request, f"Error generando informes: {str(e)}")
+        return redirect('home')
+
+@login_required
+def informes_recomendaciones(request):
+    """
+    Vista para mostrar informes específicos de recomendaciones
+    """
+    try:
+        # Consulta básica para verificar que funciona
+        todas_recomendaciones = RecomendacionProyecto.objects.select_related('project_id').order_by('-fecha_recomendacion')
+        
+        # Estadísticas por proyecto - simplificada
+        recomendaciones_por_proyecto = RecomendacionProyecto.objects.values(
+            'project_id__nombre'
+        ).annotate(
+            cantidad=Count('id')
+        ).order_by('-cantidad')
+        
+        # Distribución de scores - simplificada
+        scores_distribucion = {
+            'alta_confianza': RecomendacionUsuario.objects.filter(score_combinado__gt=0.7).count(),
+            'media_confianza': RecomendacionUsuario.objects.filter(
+                score_combinado__gt=0.5, 
+                score_combinado__lte=0.7
+            ).count(),
+            'baja_confianza': RecomendacionUsuario.objects.filter(score_combinado__lte=0.5).count(),
+        }
+        
+        # Recomendaciones recientes - simplificada
+        fecha_reciente = timezone.now() - timedelta(days=30)
+        recomendaciones_recientes = RecomendacionProyecto.objects.filter(
+            fecha_recomendacion__gte=fecha_reciente
+        ).select_related('project_id').order_by('-fecha_recomendacion')
+        
+        # Top usuarios por score - simplificada
+        top_usuarios_score = RecomendacionUsuario.objects.select_related('user_id').order_by('-score_combinado')[:20]
+        
+        # Proyectos sin recomendaciones - simplificada
+        proyectos_sin_recomendaciones = Proyecto.objects.filter(
+            ~Q(recomendacionproyecto__isnull=False)
+        )
+        
+        context = {
+            'todas_recomendaciones': todas_recomendaciones,
+            'recomendaciones_por_proyecto': recomendaciones_por_proyecto,
+            'proyectos_mejores_scores': [],  # Simplificado por ahora
+            'scores_distribucion': scores_distribucion,
+            'recomendaciones_recientes': recomendaciones_recientes,
+            'top_usuarios_score': top_usuarios_score,
+            'proyectos_sin_recomendaciones': proyectos_sin_recomendaciones,
+        }
+        
+        return render(request, 'core/informes_recomendaciones.html', context)
+        
+    except Exception as e:
+        logger.error(f"Error generando informes de recomendaciones: {str(e)}")
+        messages.error(request, f"Error generando informes de recomendaciones: {str(e)}")
+        return redirect('home')
+
+@login_required
+def exportar_informe_plataforma_pdf(request):
+    """
+    Vista para exportar informe de plataforma a PDF
+    """
+    try:
+        # Obtener datos para el informe
+        total_proyectos = Proyecto.objects.count()
+        total_usuarios = Usuario.objects.count()
+        total_recomendaciones = RecomendacionProyecto.objects.count()
+        
+        proyectos_por_tipo = Proyecto.objects.values('tipo_proyecto').annotate(
+            cantidad=Count('id')
+        ).order_by('-cantidad')
+        
+        recomendaciones_por_mes = RecomendacionProyecto.objects.filter(
+            fecha_recomendacion__gte=timezone.now() - timedelta(days=180)
+        ).extra(
+            select={'mes': "DATE_TRUNC('month', fecha_recomendacion)"}
+        ).values('mes').annotate(
+            cantidad=Count('id')
+        ).order_by('mes')
+        
+        # Crear PDF
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="informe_plataforma_{timezone.now().strftime("%Y%m%d")}.pdf"'
+        
+        doc = SimpleDocTemplate(response, pagesize=A4)
+        elements = []
+        
+        # Estilos
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=18,
+            spaceAfter=30,
+            alignment=TA_CENTER
+        )
+        subtitle_style = ParagraphStyle(
+            'CustomSubtitle',
+            parent=styles['Heading2'],
+            fontSize=14,
+            spaceAfter=20
+        )
+        
+        # Título
+        elements.append(Paragraph("Informe de Uso de la Plataforma REDUDES", title_style))
+        elements.append(Spacer(1, 20))
+        
+        # Estadísticas generales
+        elements.append(Paragraph("Estadísticas Generales", subtitle_style))
+        stats_data = [
+            ['Métrica', 'Cantidad'],
+            ['Total Proyectos', str(total_proyectos)],
+            ['Total Usuarios', str(total_usuarios)],
+            ['Total Recomendaciones', str(total_recomendaciones)]
+        ]
+        
+        stats_table = Table(stats_data, colWidths=[3*inch, 1.5*inch])
+        stats_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        elements.append(stats_table)
+        elements.append(Spacer(1, 20))
+        
+        # Proyectos por tipo
+        if proyectos_por_tipo:
+            elements.append(Paragraph("Proyectos por Tipo", subtitle_style))
+            tipo_data = [['Tipo de Proyecto', 'Cantidad']]
+            for item in proyectos_por_tipo:
+                tipo_data.append([item['tipo_proyecto'], str(item['cantidad'])])
+            
+            tipo_table = Table(tipo_data, colWidths=[3*inch, 1.5*inch])
+            tipo_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.green),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.lightgreen),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            elements.append(tipo_table)
+            elements.append(Spacer(1, 20))
+        
+        # Recomendaciones por mes
+        if recomendaciones_por_mes:
+            elements.append(Paragraph("Recomendaciones por Mes (Últimos 6 meses)", subtitle_style))
+            mes_data = [['Mes', 'Cantidad de Recomendaciones']]
+            for item in recomendaciones_por_mes:
+                mes_str = item['mes'].strftime('%B %Y') if item['mes'] else 'N/A'
+                mes_data.append([mes_str, str(item['cantidad'])])
+            
+            mes_table = Table(mes_data, colWidths=[3*inch, 1.5*inch])
+            mes_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.orange),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.lightyellow),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            elements.append(mes_table)
+        
+        # Construir PDF
+        doc.build(elements)
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error exportando informe PDF: {str(e)}")
+        messages.error(request, f"Error exportando informe PDF: {str(e)}")
+        return redirect('informes_plataforma')

@@ -98,3 +98,11 @@ def count_baja_confianza_avanzado(usuarios):
         return len([u for u in usuarios if getattr(u, 'score_avanzado', 0) < 0.5])
     except:
         return 0
+
+@register.filter
+def divide(value, arg):
+    """Divide dos números"""
+    try:
+        return float(value) / float(arg)
+    except (ValueError, TypeError, ZeroDivisionError):
+        return 0
