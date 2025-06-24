@@ -3,7 +3,7 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from django.urls import reverse_lazy, reverse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_POST
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
@@ -22,6 +22,13 @@ from .forms import (
     EstudioFormSet, ExperienciaFormSet
 )
 from .advanced_ml_models import AdvancedRecommendationSystem
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+import io
 
 logger = logging.getLogger(__name__)
 
@@ -1522,3 +1529,154 @@ class RecomendacionCNNDetailView(LoginRequiredMixin, DetailView):
             u.score_cnn = u.score_nn
         context['usuarios_recomendados'] = usuarios_recomendados
         return context
+
+@login_required
+def exportar_recomendaciones_pdf(request, recomendacion_id):
+    """
+    Vista para exportar recomendaciones a PDF
+    """
+    try:
+        recomendacion = get_object_or_404(RecomendacionProyecto, id=recomendacion_id)
+        usuarios_recomendados = recomendacion.usuarios_recomendados.all()
+        
+        # Crear el PDF
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="recomendaciones_{recomendacion.project_id.nombre}_{recomendacion.fecha_recomendacion.strftime("%Y%m%d")}.pdf"'
+        
+        # Crear el documento
+        doc = SimpleDocTemplate(response, pagesize=A4)
+        elements = []
+        
+        # Estilos
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=16,
+            spaceAfter=30,
+            alignment=TA_CENTER
+        )
+        subtitle_style = ParagraphStyle(
+            'CustomSubtitle',
+            parent=styles['Heading2'],
+            fontSize=14,
+            spaceAfter=20
+        )
+        normal_style = styles['Normal']
+        
+        # Título
+        elements.append(Paragraph("Sistema de Recomendación REDUDES", title_style))
+        elements.append(Spacer(1, 20))
+        
+        # Información del proyecto
+        elements.append(Paragraph(f"<b>Proyecto:</b> {recomendacion.project_id.nombre}", subtitle_style))
+        elements.append(Paragraph(f"<b>Fecha de Recomendación:</b> {recomendacion.fecha_recomendacion.strftime('%d/%m/%Y %H:%M')}", normal_style))
+        elements.append(Paragraph(f"<b>Convocatoria:</b> {recomendacion.project_id.convocatoria}", normal_style))
+        elements.append(Paragraph(f"<b>Tipo de Proyecto:</b> {recomendacion.project_id.tipo_proyecto}", normal_style))
+        elements.append(Spacer(1, 20))
+        
+        # Métricas del modelo
+        elements.append(Paragraph("Métricas del Modelo", subtitle_style))
+        metrics_data = [
+            ['Métrica', 'Valor'],
+            ['Accuracy', f"{recomendacion.nn_accuracy:.4f}"],
+            ['Precision', f"{recomendacion.nn_precision:.4f}"],
+            ['Recall', f"{recomendacion.nn_recall:.4f}"],
+            ['F1-Score', f"{recomendacion.nn_f1:.4f}"]
+        ]
+        metrics_table = Table(metrics_data, colWidths=[2*inch, 1.5*inch])
+        metrics_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        elements.append(metrics_table)
+        elements.append(Spacer(1, 20))
+        
+        # Tabla de usuarios recomendados
+        if usuarios_recomendados:
+            elements.append(Paragraph("Perfiles Recomendados", subtitle_style))
+            
+            # Datos de la tabla
+            table_data = [['#', 'Usuario', 'Email', 'Score', 'Confianza']]
+            
+            for rec in usuarios_recomendados:
+                # Determinar nivel de confianza
+                score = rec.score_nn
+                if score > 0.7:
+                    confianza = "Alta"
+                elif score > 0.5:
+                    confianza = "Media"
+                else:
+                    confianza = "Baja"
+                
+                table_data.append([
+                    str(rec.ranking),
+                    f"{rec.user_id.nombres} {rec.user_id.apellidos}",
+                    rec.user_id.email,
+                    f"{score:.4f}",
+                    confianza
+                ])
+            
+            # Crear tabla
+            table = Table(table_data, colWidths=[0.5*inch, 2*inch, 2.5*inch, 1*inch, 1*inch])
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('FONTSIZE', (0, 1), (-1, -1), 9),
+                ('ALIGN', (0, 0), (0, -1), 'CENTER'),  # Centrar columna #
+                ('ALIGN', (3, 1), (3, -1), 'CENTER'),  # Centrar columna Score
+                ('ALIGN', (4, 1), (4, -1), 'CENTER'),  # Centrar columna Confianza
+            ]))
+            elements.append(table)
+            
+            # Estadísticas
+            elements.append(Spacer(1, 20))
+            elements.append(Paragraph("Estadísticas de Recomendaciones", subtitle_style))
+            
+            alta_confianza = len([u for u in usuarios_recomendados if u.score_nn > 0.7])
+            media_confianza = len([u for u in usuarios_recomendados if 0.5 <= u.score_nn <= 0.7])
+            baja_confianza = len([u for u in usuarios_recomendados if u.score_nn < 0.5])
+            
+            stats_data = [
+                ['Nivel de Confianza', 'Cantidad'],
+                ['Alta (≥0.7)', str(alta_confianza)],
+                ['Media (0.5-0.7)', str(media_confianza)],
+                ['Baja (<0.5)', str(baja_confianza)],
+                ['Total', str(len(usuarios_recomendados))]
+            ]
+            
+            stats_table = Table(stats_data, colWidths=[2*inch, 1*inch])
+            stats_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.green),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.lightgreen),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            elements.append(stats_table)
+        else:
+            elements.append(Paragraph("No hay recomendaciones disponibles", normal_style))
+        
+        # Construir PDF
+        doc.build(elements)
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error exportando PDF: {str(e)}")
+        messages.error(request, f"Error exportando PDF: {str(e)}")
+        return redirect('ver_recomendaciones', recomendacion_id=recomendacion_id)

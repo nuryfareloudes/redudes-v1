@@ -64,6 +64,7 @@ urlpatterns = [
     path('recomendaciones-avanzada/<int:recomendacion_id>/', views.RecomendacionAvanzadaDetailView.as_view(), name='ver_recomendaciones_avanzadas'),
     path('proyectos/<int:proyecto_id>/recomendaciones/generar-cnn/', views.generar_recomendaciones_cnn, name='generar_recomendaciones_cnn'),
     path('recomendaciones-cnn/<int:recomendacion_id>/', views.RecomendacionCNNDetailView.as_view(), name='ver_recomendaciones_cnn'),
+    path('recomendaciones/<int:recomendacion_id>/exportar-pdf/', views.exportar_recomendaciones_pdf, name='exportar_recomendaciones_pdf'),
     
     # Autenticación
     path('login/', auth_views.LoginView.as_view(template_name='core/login.html'), name='login'),

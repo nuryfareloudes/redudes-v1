@@ -192,6 +192,9 @@
                             <button type="button" class="btn btn-success" onclick="exportarResultados()">
                                 <i class="fas fa-file-excel"></i> Exportar Resultados
                             </button>
+                            <a href="{% url 'exportar_recomendaciones_pdf' recomendacion_id=recomendacion.id %}" class="btn btn-success">
+                                <i class="fas fa-file-pdf"></i> Exportar PDF
+                            </a>
                         </div>
                     </div>
                 </div>
